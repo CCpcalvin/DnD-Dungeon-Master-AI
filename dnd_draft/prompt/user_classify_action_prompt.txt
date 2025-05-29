@@ -1,0 +1,8 @@
+Current Context:
+- Floor: {current_floor}
+- Floor Type: {floor_type}
+- Player Stats: {player_stats}
+
+- History: {history}
+
+Player Action: "{player_input}"

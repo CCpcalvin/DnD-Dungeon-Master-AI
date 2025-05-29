@@ -1,0 +1,1 @@
+docker run --gpus all -it -v ${PWD}:/app -v ${PWD}/models:/app/models --entrypoint /bin/bash dnd-master-gpu
