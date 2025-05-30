@@ -1,0 +1,8 @@
+Current Context:
+- Floor: 1
+- Floor Type: Non-combat
+- Player Stats: {'name': 'You', 'health': 5, 'weapon': 'longsword', 'inventory': {'gold': 5}, 'strength': 5, 'dexterity': 2, 'intelligence': 6, 'wisdom': 7, 'charisma': 5, 'min_per_attr': 1, 'max_per_attr': 9}
+
+- History: {"Floor 1": "[{\'narrative\': \'You step out of the elevator and onto the first floor of the mysterious tower. The air is stale and musty, and the walls are adorned with ancient tapestries that seem to whisper secrets to each other. The room is dimly lit by flickering torches, casting eerie shadows on the stone floor. As you look around, you notice a large wooden door with intricate carvings of mythical creatures, and a small table with a single, leather-bound book lying open on it. The words on the pages appear to be some sort of ancient language, and the pages seem to be fluttering in the breeze, as if someone or something had recently passed through the room. \'}]"}
+
+Player Action: I decide to investigate the book.

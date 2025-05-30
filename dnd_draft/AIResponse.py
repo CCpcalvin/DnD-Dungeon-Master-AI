@@ -11,6 +11,7 @@ class AIResponse:
 
     success: bool
     message: str
+    ai_response: str
 
     @classmethod
     def create_error(cls, message: str) -> AIResponse:
@@ -26,6 +27,7 @@ class AIResponse:
             return AIResponseSuccess(
                 success=True,
                 message="",
+                ai_response=ai_response,
                 respond_message=data.get("respond_message", ""),
                 suggested_actions=data.get("suggested_actions", []),
                 health_change=data.get("health_change", 0),
@@ -36,10 +38,10 @@ class AIResponse:
             )
 
         except (json.JSONDecodeError, KeyError):
-            return AIResponseInvalidJsonError(ai_respond=ai_response)
+            return AIResponseInvalidJsonError(ai_response=ai_response)
 
         except:
-            return AIResponseUnknownError(ai_respond=ai_response)
+            return AIResponseUnknownError(ai_response=ai_response)
     
     # Get the first suggested action
     def get_suggested_action(self):
@@ -65,7 +67,7 @@ class AIResponseInvalidJsonError(AIResponse):
 
     success: bool = False
     message: str = "Invalid JSON"
-    ai_respond: str = ""
+    ai_response: str = ""
 
 
 @dataclass
@@ -74,4 +76,4 @@ class GameAIUnknownError(AIResponse):
 
     success: bool = False
     message: str = "Unknown Error"
-    ai_respond: str = ""
+    ai_response: str = ""

@@ -9,6 +9,7 @@ import random, json
 class Player:
     name: str
     health: int
+    weapon: str
     inventory: Dict[str, int]
 
     # Attributes
@@ -55,6 +56,7 @@ class Player:
         return cls(
             name=name,
             health=stats["health"],
+            weapon="longsword",
             inventory={"gold": 5},
             strength=stats["strength"],
             dexterity=stats["dexterity"],
@@ -116,11 +118,11 @@ class GameState:
         return f"Floor: {self.current_floor}\nPlayer: {self.player}\nInventory: {self.inventory}\nFloor History Index: {self.floor_history.keys()}"
 
     def format_history(self) -> str:
-        history_list = {}
+        to_print = {}
         for floor, floor_history in self.floor_history.items():
             if floor_history.has_summary():
-                history_list[f"Floor {floor}"] = floor_history.summary
+                to_print[f"Floor {floor}"] = floor_history.summary
             else:
-                history_list[f"Floor {floor}"] = floor_history.__str__()
+                to_print[f"Floor {floor}"] = floor_history.__str__()
 
-        return json.dumps(history_list)
+        return json.dumps(to_print)

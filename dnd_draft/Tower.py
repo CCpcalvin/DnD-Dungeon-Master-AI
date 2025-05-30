@@ -194,6 +194,7 @@ class DungeonMaster:
                             "type": "object",
                             "properties": {
                                 "message": {"type": "string"},
+                                "is_event_end": {"type": "boolean"},
                                 "suggested_actions": {"type": "array", "items": {"type": "string"}},
                                 "health_change": {"type": "number"},
                                 "inventory_changes": {"type": "object"},
@@ -201,6 +202,7 @@ class DungeonMaster:
                             },
                             "required": [
                                 "message",
+                                "is_event_end",
                                 "suggested_actions",
                                 "health_change",
                                 "inventory_changes",
@@ -211,6 +213,7 @@ class DungeonMaster:
                             "type": "object",
                             "properties": {
                                 "message": {"type": "string"},
+                                "is_event_end": {"type": "boolean"},
                                 "suggested_actions": {"type": "array", "items": {"type": "string"}},
                                 "health_change": {"type": "number"},
                                 "inventory_changes": {"type": "object"},
@@ -218,6 +221,7 @@ class DungeonMaster:
                             },
                             "required": [
                                 "message",
+                                "is_event_end",
                                 "suggested_actions",
                                 "health_change",
                                 "inventory_changes",
@@ -250,6 +254,22 @@ class DungeonMaster:
         self.state.floor_history[self.state.current_floor].add_narrative(
             action_consequence.message
         )
+    
+    def _handle_action_response_success(self, response: ClassifyActionResponse):
+        """By pass all the checking"""
+
+        self.state.floor_history[self.state.current_floor].add_player_actions(
+            response.player_action, True
+        )
+        self.handle_action_consequence(response.success_response)
+    
+    def _handle_action_response_failure(self, response: ClassifyActionResponse):
+        """By pass all the checking"""
+
+        self.state.floor_history[self.state.current_floor].add_player_actions(
+            response.player_action, False
+        )
+        self.handle_action_consequence(response.failure_response)
 
     def handle_classify_action_response(self, response: ClassifyActionResponse):
         if isinstance(response, ClassifyActionSuccess):
@@ -266,33 +286,21 @@ class DungeonMaster:
             # Check critical success
             if roll == 10:
                 # Success
-                self.state.floor_history[self.state.current_floor].add_player_actions(
-                    response.player_action, True
-                )
-                self.handle_action_consequence(response.success_response)
+                self._handle_action_response_success(response)
 
             # Check critical failure
             elif roll == 1:
                 # Failure
-                self.state.floor_history[self.state.current_floor].add_player_actions(
-                    response.player_action, False
-                )
-                self.handle_action_consequence(response.failure_response)
+                self._handle_action_response_failure(response)
 
             # Check score > dc or not
             elif score >= dc:
                 # Success
-                self.state.floor_history[self.state.current_floor].add_player_actions(
-                    response.player_action, True
-                )
-                self.handle_action_consequence(response.success_response)
+                self._handle_action_response_success(response)
 
             else:
                 # Failure
-                self.state.floor_history[self.state.current_floor].add_player_actions(
-                    response.player_action, False
-                )
-                self.handle_action_consequence(response.failure_response)
+                self._handle_action_response_failure(response)
 
             return response
 
