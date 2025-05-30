@@ -31,3 +31,9 @@ import json
 # # print(data)
 # # print(data.get("success_response", "").get("inventory_changes", ""))
 # print(data.get("failure_response", "").get("message", ""))
+
+with open("./dnd_draft/test/fake_ai_classify_action_response.json") as f:
+    my_dict = f.read()
+
+print(json.loads(my_dict))
+

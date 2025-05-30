@@ -1,11 +1,12 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 
 
 @dataclass
 class ActionConsequence:
     message: str
+    suggested_actions: List[str]
     health_change: int
     inventory_changes: dict
     attribute_changes: dict
@@ -15,6 +16,7 @@ class ActionConsequence:
         """Create an ActionConsequence from a dictionary."""
         return cls(
             message=data.get("message", ""),
+            suggested_actions=data.get("suggested_actions", []),
             health_change=data.get("health_change", 0),
             inventory_changes=data.get("inventory_changes", {}),
             attribute_changes=data.get("attribute_changes", {}),
@@ -28,6 +30,7 @@ class ClassifyActionResponse:
     success: bool  # This means we can read the AI response successfully or not
     message: str
     player_action: str
+    ai_response: str = field(repr=False)
 
     @classmethod
     def process_response(
@@ -37,7 +40,7 @@ class ClassifyActionResponse:
             data = json.loads(ai_response)
             narrative_consistency = data.get("narrative_consistency", "")
 
-            if narrative_consistency == "true":
+            if narrative_consistency == True:
                 return ClassifyActionSuccess(
                     success=True,
                     message="",
@@ -51,6 +54,7 @@ class ClassifyActionResponse:
                     failure_response=ActionConsequence.from_dict(
                         data.get("failure_response", "")
                     ),
+                    ai_response=ai_response,
                 )
 
             else:
@@ -58,13 +62,14 @@ class ClassifyActionResponse:
                     success=True,
                     message="Narrative Inconsistency",
                     player_action=player_action,
+                    ai_response=ai_response,
                 )
 
         except (json.JSONDecodeError, KeyError):
             return ClassifyActionInvalidJsonError(
                 success=False,
                 message="Invalid JSON",
-                ai_respond=ai_response,
+                ai_response=ai_response,
                 player_action=player_action,
             )
 
@@ -72,7 +77,7 @@ class ClassifyActionResponse:
             return ClassifyActionUnknownError(
                 success=False,
                 message=str(e),
-                ai_respond=ai_response,
+                ai_response=ai_response,
                 player_action=player_action,
             )
 
@@ -91,16 +96,19 @@ class ClassifyActionSuccess(ClassifyActionResponse):
 @dataclass
 class ClassifyActionNarrativeInconsistency(ClassifyActionResponse):
     """Error for invalid JSON responses"""
+
     pass
 
 
 @dataclass
 class ClassifyActionInvalidJsonError(ClassifyActionResponse):
     """Error for invalid JSON responses"""
-    ai_respond: str
+
+    pass 
 
 
 @dataclass
 class ClassifyActionUnknownError(ClassifyActionResponse):
     """Unknown Error"""
-    ai_respond: str
+
+    pass 

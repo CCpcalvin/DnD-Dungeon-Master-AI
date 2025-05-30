@@ -25,24 +25,10 @@ fake_ai_response = AIResponse.AIResponseSuccess(
     game_over=False,
 )
 
-# fake_ai_classify_action_response = ClassifyActionSuccess.process_response(
-#     success=True,
-#     message="",
-#     player_action="Explore the cobweb-covered tapestries",
-#     action_type="ability_check",
-#     relevant_attribute="intelligence",
-#     difficulty_class=6,
-#     success_response=ActionConsequence(
-#         message="You carefully examine the cobweb-covered tapestries and notice a small, hidden compartment in one of them. Inside, you find a cryptic message that reads: 'The answer lies in the shadows'.",
-#         health_change=0,
-#         inventory_changes={"message": 1},
-#     ),
-#     failure_response=ActionConsequence(
-#         message="You try to examine the cobweb-covered tapestries more closely, but they seem to be just old, dusty fabrics. There's nothing out of the ordinary about them.",
-#         health_change=0,
-#         inventory_changes={},
-#     ),
-# )
+with open("test/fake_ai_classify_action_response.json") as f:
+    fake_ai_classify_action_response = ClassifyActionSuccess.process_response(
+        "Explore the cobweb-covered tapestries", f.read()
+    )
 
 
 def reload_towerDM():
@@ -113,6 +99,7 @@ def test_classify_action():
     result = dm.classify_action(suggested_action)
 
     print(result)
+    print(result.ai_response)
 
 
 def test_invalid_action():
@@ -123,3 +110,17 @@ def test_invalid_action():
     result = dm.classify_action("I take out my RPG and start shooting the tower.")
 
     print(result)
+    print(result.ai_response)
+
+
+def test_handle_classify_action_response():
+    dm = reload_towerDM()
+    dm.start_game()
+    dm.handle_ai_response(fake_ai_response)
+
+    print(dm.state.player)
+    dm.handle_classify_action_response(fake_ai_classify_action_response)
+    print(dm.state.player)
+
+    # print(dm.state.format_history())
+    print(dm.state.floor_history[1])

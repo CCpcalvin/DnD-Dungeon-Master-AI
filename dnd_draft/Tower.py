@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+import json, random
 
 from AIClassifyActionResponse import (
     ClassifyActionNarrativeInconsistency,
@@ -67,7 +67,31 @@ class DungeonMaster:
                 {"role": "system", "content": self.respond_system_prompt},
                 {"role": "user", "content": self.setup_floor_user_prompt()},
             ],
-            response_format={"type": "json_object"},
+            response_format={
+                "type": "json_object",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "respond_message": {"type": "string"},
+                        "suggested_actions": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "health_change": {"type": "number"},
+                        "next_floor": {"type": "boolean"},
+                        "inventory_changes": {"type": "object"},
+                        "game_over": {"type": "boolean"},
+                    },
+                    "required": [
+                        "respond_message",
+                        "suggested_actions",
+                        "health_change",
+                        "next_floor",
+                        "inventory_changes",
+                        "game_over",
+                    ],
+                },
+            },
             temperature=0.8,
             max_tokens=500,
         )["choices"][0]["message"]["content"].strip()
@@ -141,7 +165,76 @@ class DungeonMaster:
                     "content": self.setup_classify_action_user_prompt(action),
                 },
             ],
-            response_format={"type": "json_object"},
+            response_format={
+                "type": "json_object",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "narrative_consistency": {"type": "boolean"},
+                        "action_type": {
+                            "type": "string",
+                            "enum": ["ability_check", "use_item", "go_to_next_floor"],
+                        },
+                        "relevant_attribute": {
+                            "type": "string",
+                            "enum": [
+                                "strength",
+                                "dexterity",
+                                "intelligence",
+                                "wisdom",
+                                "charisma",
+                            ],
+                        },
+                        "difficulty_class": {
+                            "type": "number",
+                            "minimum": 3,
+                            "maximum": 11,
+                        },
+                        "success_response": {
+                            "type": "object",
+                            "properties": {
+                                "message": {"type": "string"},
+                                "suggested_actions": {"type": "array", "items": {"type": "string"}},
+                                "health_change": {"type": "number"},
+                                "inventory_changes": {"type": "object"},
+                                "attribute_changes": {"type": "object"},
+                            },
+                            "required": [
+                                "message",
+                                "suggested_actions",
+                                "health_change",
+                                "inventory_changes",
+                                "attribute_changes",
+                            ],
+                        },
+                        "failure_response": {
+                            "type": "object",
+                            "properties": {
+                                "message": {"type": "string"},
+                                "suggested_actions": {"type": "array", "items": {"type": "string"}},
+                                "health_change": {"type": "number"},
+                                "inventory_changes": {"type": "object"},
+                                "attribute_changes": {"type": "object"},
+                            },
+                            "required": [
+                                "message",
+                                "suggested_actions",
+                                "health_change",
+                                "inventory_changes",
+                                "attribute_changes",
+                            ],
+                        },
+                    },
+                    "required": [
+                        "narrative_consistency",
+                        "action_type",
+                        "relevant_attribute",
+                        "difficulty_class",
+                        "success_response",
+                        "failure_response",
+                    ],
+                },
+            },
             max_tokens=1000,
             temperature=0.8,
         )["choices"][0]["message"]["content"].strip()

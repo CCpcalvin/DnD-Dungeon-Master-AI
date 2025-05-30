@@ -83,8 +83,9 @@ class Player:
 
 
 class FloorHistory:
-    content: list[dict] = []
-    summary: str = ""
+    def __init__(self):
+        self.content = []
+        self.summary = ""
 
     def add_narrative(self, narrative: str):
         self.content.append({"narrative": narrative})
