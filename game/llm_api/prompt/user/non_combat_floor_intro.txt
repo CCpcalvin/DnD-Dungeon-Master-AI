@@ -1,0 +1,5 @@
+Generate a floor description and investigation hook with these details:
+
+Game Theme: {theme}
+Player Description: {player_description}
+Floor Type: {floor_type}

@@ -3,9 +3,15 @@ from game.classes.FloorHistory import FloorHistory
 from game.classes.EntityClasses import Player
 from game.classes.ItemClasses import Rarity
 
-from game.llm_api.BackgroundRequest import BackgroundRequest
-from game.llm_api.WeaponGenerationRequest import WeaponGenerationRequest
-from game.llm_api.ThemeCondenseRequest import ThemeCondenseRequest
+from game.llm_api.BackgroundRequest import BackgroundRequest, BackgroundResponse
+from game.llm_api.WeaponGenerationRequest import (
+    WeaponGenerationRequest,
+    WeaponGenerationResponse,
+)
+from game.llm_api.ThemeCondenseRequest import (
+    ThemeCondenseRequest,
+    ThemeCondenseResponse,
+)
 
 
 class DungeonMaster:
@@ -26,7 +32,7 @@ class DungeonMaster:
         #! TODO: Handle error
         print("(System): Generating the story...")
         if mock:
-            background_response = BackgroundResponse.load_ai_response(
+            background_response = BackgroundResponse.load(
                 "./test/mock/background_response.json"
             )
         else:
@@ -40,10 +46,15 @@ class DungeonMaster:
         # Now we condense the story for later use
         #! TODO: Handle error
         print("(System): Condensing the backstory...")
-        theme_condense_response = self.theme_condense_request.send(
-            theme=background_response.theme,
-            player_backstory=background_response.player_backstory,
-        )
+        if mock:
+            theme_condense_response = ThemeCondenseResponse.load(
+                "./test/mock/theme_condense_response.json"
+            )
+        else:
+            theme_condense_response = self.theme_condense_request.send(
+                theme=background_response.theme,
+                player_backstory=background_response.player_backstory,
+            )
 
         # Store the theme for later use
         self.theme = theme_condense_response.theme
@@ -53,7 +64,7 @@ class DungeonMaster:
         #! TODO: Handle error
         print("(System): Generating the weapons...")
         if mock:
-            weapon_generation_response = WeaponGenerationResponse.load_ai_response(
+            weapon_generation_response = WeaponGenerationResponse.load(
                 "./test/mock/starter_weapon.json"
             )
         else:
