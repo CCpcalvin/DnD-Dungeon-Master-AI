@@ -38,6 +38,8 @@ class LLMRequest:
 
         with open(save_path, "w") as f:
             json.dump(to_save, f)
+        
+        return ai_response
 
 
 @dataclass

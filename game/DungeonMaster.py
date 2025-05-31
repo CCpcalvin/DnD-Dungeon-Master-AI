@@ -25,9 +25,6 @@ class DungeonMaster:
         self.theme_condense_request = ThemeCondenseRequest(self.model)
 
     def start_game(self, mock: bool = False):
-        # Init history
-        self.history.append(FloorHistory())
-
         # Setup the backstory
         #! TODO: Handle error
         print("(System): Generating the story...")
@@ -45,7 +42,7 @@ class DungeonMaster:
 
         # Now we condense the story for later use
         #! TODO: Handle error
-        print("(System): Condensing the backstory...")
+        print("(System): Condensing the story...")
         if mock:
             theme_condense_response = ThemeCondenseResponse.load(
                 "./test/mock/theme_condense_response.json"

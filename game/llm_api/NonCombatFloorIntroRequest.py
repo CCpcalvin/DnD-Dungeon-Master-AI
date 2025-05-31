@@ -23,6 +23,7 @@ class NonCombatFloorIntroResponse(LLMResponse):
                 description=data["description"],
                 investigation_hook=data["investigation_hook"],
                 suggested_actions=data["suggested_actions"],
+                summary=data["summary"],
             )
 
         except Exception as e:
@@ -38,6 +39,7 @@ class NonCombatFloorIntroResponseSuccess(NonCombatFloorIntroResponse):
     description: str
     investigation_hook: str
     suggested_actions: list[str]
+    summary: str
 
 
 @dataclass
@@ -47,8 +49,10 @@ class NonCombatFloorIntroResponseError(NonCombatFloorIntroResponse):
 
 @dataclass
 class NonCombatFloorIntroRequest(LLMRequest):
-    def __init__(self, model: LLMModel):
+    def __init__(self, model: LLMModel, theme: str, player_description: str):
         super().__init__(model)
+        self.theme = theme
+        self.player_description = player_description
 
         # Load system prompt
         with open(
@@ -76,37 +80,33 @@ class NonCombatFloorIntroRequest(LLMRequest):
                             "type": "array",
                             "items": {"type": "string"},
                         },
+                        "summary": {"type": "string"},
                     },
                     "required": [
                         "description",
                         "investigation_hook",
                         "suggested_actions",
+                        "summary",
                     ],
                 },
             }
         )
 
-    def update_user_prompt(
-        self, theme: str, player_description: str, floor_type: NonCombatFloorType
-    ):
+    def update_user_prompt(self, floor_type: NonCombatFloorType):
         """Generate the user prompt by filling in the template with provided values."""
         self.set_user_prompt(
             self.user_prompt_template.format(
-                theme=theme,
-                player_description=player_description,
+                theme=self.theme,
+                player_description=self.player_description,
                 floor_type=floor_type.value,
             )
         )
 
-    def send(
-        self, theme: str, player_description: str, floor_type: NonCombatFloorType
-    ) -> NonCombatFloorIntroResponse:
+    def send(self, floor_type: NonCombatFloorType) -> NonCombatFloorIntroResponse:
         """
         Generate a floor description and investigation hook based on the provided floor type.
 
         Args:
-            theme: The theme of the story/game
-            player_description: The description of the player
             floor_type: The type of the floor
 
         Returns:
@@ -114,7 +114,7 @@ class NonCombatFloorIntroRequest(LLMRequest):
         """
 
         # Set the user prompt with the provided values
-        self.update_user_prompt(theme, player_description, floor_type)
+        self.update_user_prompt(floor_type)
 
         # Get the AI response
         ai_response = self.model.get_model().create_chat_completion(

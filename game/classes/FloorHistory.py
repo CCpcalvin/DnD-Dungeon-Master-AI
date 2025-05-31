@@ -5,7 +5,7 @@ class FloorHistory:
         self.summary = ""
 
     def add_narrative(self, narrative: str):
-        self.content.append({"role": "Narrative", "content": narrative})
+        self.content.append({"role": "Narrator", "content": narrative})
     
     def add_system(self, system: str):
         self.content.append({"role": "System", "content": system})
@@ -41,8 +41,8 @@ class FloorHistory:
         for item in self.content:
             if item["role"] == "Player":
                 string += f"Player: {item['content']}.({'Success' if item['success'] else 'Failed'})\n"
-            elif item["role"] == "Narrative":
-                string += f"Narrative: {item['content']}\n"
+            elif item["role"] == "Narrator":
+                string += f"Narrator: {item['content']}\n"
 
         return string
         

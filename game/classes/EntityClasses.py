@@ -76,6 +76,16 @@ class Player(Entity):
             max_health=cls.start_health,
         )
 
+    def inventory_prompt(self) -> str:
+        if len(self.inventory) == 0:
+            return "No Items in inventory"
+
+        to_print: list[str] = []
+        for item in self.inventory:
+            to_print.append(item.name)
+
+        return ", ".join(to_print)
+
 
 @dataclass
 class Enemy(Entity):

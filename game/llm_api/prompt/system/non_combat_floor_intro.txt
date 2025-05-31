@@ -8,6 +8,7 @@ Generate a response in JSON format with these fields:
         "action1", // one short sentence
         "action2" // 
     ]
+    "summary": "A 15-20 words summary of the key elements in this scene"
 }
 
 Guidelines:

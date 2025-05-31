@@ -8,7 +8,14 @@ from game.classes.LLMModel import LLMModel
 from game import Const, DungeonMaster
 from game.classes import FloorHistory, ItemClasses, EntityClasses
 from game.classes import NonCombatFloorType, NonCombatFloor
-from game.llm_api import LLMRequest, BackgroundRequest, WeaponGenerationRequest, ThemeCondenseRequest, NonCombatFloorIntroRequest
+from game.llm_api import (
+    LLMRequest,
+    BackgroundRequest,
+    WeaponGenerationRequest,
+    ThemeCondenseRequest,
+    NonCombatFloorIntroRequest,
+    ClassifyNonCombatActionRequest,
+)
 
 # Initialize the model once
 print("Loading LLM (this will take a moment)...")
@@ -31,6 +38,7 @@ def reload_game_modules():
         ThemeCondenseRequest,
         NonCombatFloorType,
         NonCombatFloorIntroRequest,
+        ClassifyNonCombatActionRequest,
         NonCombatFloor,
         DungeonMaster,
     ]
@@ -44,4 +52,3 @@ def reload_game_modules():
 
 
 dm = reload_game_modules()
-

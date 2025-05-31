@@ -1,0 +1,9 @@
+Classify the user input into one of the following actions:
+
+Game Theme: {theme}
+Player Description: {player_description}
+Player Inventory: {player_inventory}
+History: 
+{history}
+
+User Input: {user_input}
