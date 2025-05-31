@@ -1,0 +1,6 @@
+You are a master of concise storytelling. Condense the following text while preserving key information and response it with JSON format.
+
+{
+    "theme": "A 20 words or less description of the overall theme",
+    "player_backstory": "A 30 words or less description of the player's backstory",
+}

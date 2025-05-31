@@ -20,7 +20,7 @@
 ---
 - When start game: 
   - Initialize `GameState`
-  - send `BackgroundRequest()` to get the background 
+  - send `BackgroundRequest` to get the background 
 
 while not game over:
   - if current floor is non-combat floors:
@@ -37,7 +37,7 @@ while not game over:
 
       - if the action is "ability_check", then we send out `AbilityCheckRequest` to get the related attribute and difficulty class
         - calculate it is successful or not in python
-        - The user prompt for `NonCombatStoryExtendRequest` may be "{player_action}. But it is successful / unsuccessful."
+        - The user prompt for `NonCombatStoryExtendRequest` may be "{player_action}. It is successful / unsuccessful."
         - Update the roll result to the history
 
     - send `NonCombatStoryExtendRequest` based on the result
@@ -96,7 +96,6 @@ while not game over:
 - GameState
   - Floor
   - Player 
-  - Inventory
 
 - FloorHistory
 
@@ -106,14 +105,11 @@ while not game over:
   - Description: str (for LLM to test the prompt, the ability check)
   - Normal Damage: int (for the hint of the LLM)
 
-
 - Item
   - Name: str
   - Effect: str
 
-
 - Status effect (Skip it for the simplicity)
-
 
 - Entity (including both player and enemy)
   - Description: str
@@ -125,17 +121,14 @@ while not game over:
   - Wisdom
   - Charisma
 
-
 - Player(Entity)
   - Description: "Player"
   - Weapon: `Weapon`
   - Inventory in list of `Item`
 
-
 - Enemy(Entity)
   - Description: str
   - Normal Damage: int
-
 
 ## Floor Classes
 - Floor

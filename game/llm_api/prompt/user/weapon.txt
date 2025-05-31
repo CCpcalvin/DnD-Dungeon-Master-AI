@@ -1,0 +1,20 @@
+Generate a unique weapon that fits the following theme and player description:
+
+Theme: {theme}
+Player Backstory: {player_backstory}
+
+1. Weapon Concept:
+- Create a {rarity} weapon that feels authentic to the setting
+- It should reflect the player's background and the game's atmosphere
+- Include subtle hints about the world's lore
+
+2. Weapon Properties:
+- Choose an appropriate weapon type (Sword/Axe/Bow/Staff/Dagger/Spear/Club/Mace)
+- Give it a creative and thematic name
+- Describe its appearance in 1-2 sentences
+- [Optional] Add a unique special ability that fits the theme
+
+3. Style Guidelines:
+- Keep the description concise but evocative
+- The weapon should feel powerful but balanced
+- Make it feel like it has a history in the world

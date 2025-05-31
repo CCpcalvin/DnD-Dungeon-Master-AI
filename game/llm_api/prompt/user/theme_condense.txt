@@ -1,0 +1,4 @@
+Theme: {theme}
+Player Backstory: {player_backstory}
+
+Please condense both while keeping essential details.
