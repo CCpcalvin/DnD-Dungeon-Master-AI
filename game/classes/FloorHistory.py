@@ -1,3 +1,5 @@
+from game.classes.RollResults import RollResult
+
 
 class FloorHistory:
     def __init__(self):
@@ -6,12 +8,12 @@ class FloorHistory:
 
     def add_narrative(self, narrative: str):
         self.content.append({"role": "Narrator", "content": narrative})
-    
+
     def add_system(self, system: str):
         self.content.append({"role": "System", "content": system})
 
-    def add_player_actions(self, actions: str, success: bool):
-        self.content.append({"role": "Player", "content": actions, "success": success})
+    def add_player_actions(self, actions: str, result: RollResult):
+        self.content.append({"role": "Player", "content": actions, "result": result})
 
     def has_summary(self):
         return len(self.summary) > 0
@@ -22,27 +24,25 @@ class FloorHistory:
     def __str__(self):
         if not self.has_history():
             return f"No history available"
-        
+
         string = ""
         for item in self.content:
             if item["role"] == "Player":
-                string += f"Player: {item['content']}.({'Success' if item['success'] else 'Failed'})\n"
+                string += f"Player: {item['content']}.({item['result'].value})\n"
             else:
                 string += f"{item['role']}: {item['content']}\n"
 
         return string
 
-
     def history_prompt(self):
         if not self.has_history():
             return "No history available"
-        
+
         string = ""
         for item in self.content:
             if item["role"] == "Player":
-                string += f"Player: {item['content']}.({'Success' if item['success'] else 'Failed'})\n"
+                string += f"Player: {item['content']}. ({item['result'].value})\n"
             elif item["role"] == "Narrator":
                 string += f"Narrator: {item['content']}\n"
 
         return string
-        

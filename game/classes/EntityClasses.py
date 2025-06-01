@@ -78,13 +78,19 @@ class Player(Entity):
 
     def inventory_prompt(self) -> str:
         if len(self.inventory) == 0:
-            return "No Items in inventory"
+            return "No items in inventory"
 
         to_print: list[str] = []
         for item in self.inventory:
             to_print.append(item.name)
 
         return ", ".join(to_print)
+    
+    def get_attribute(self, attribute: str) -> int:
+        return getattr(self, attribute)
+    
+    def update_health(self, health_change: int):
+        self.current_health += health_change
 
 
 @dataclass

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
 from game.classes.LLMModel import LLMModel
-from game.classes.ItemClasses import Rarity, WeaponType, Weapon
+from game.classes.ItemClasses import Rarity, Weapon
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 
 import os, json
@@ -46,7 +46,7 @@ class WeaponGenerationResponseSuccess(WeaponGenerationResponse):
         return Weapon(
             name=self.name,
             rarity=rarity,
-            type=WeaponType(self.type),
+            type=self.type,
             description=self.description,
             base_damage=base_damage,
         )

@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append("..")
 
 from importlib import reload
@@ -6,6 +7,7 @@ from importlib import reload
 from game.classes.LLMModel import LLMModel
 
 from game import Const, DungeonMaster
+from game.classes import RollResults
 from game.classes import FloorHistory, ItemClasses, EntityClasses
 from game.classes import NonCombatFloorType, NonCombatFloor
 from game.llm_api import (
@@ -15,11 +17,13 @@ from game.llm_api import (
     ThemeCondenseRequest,
     NonCombatFloorIntroRequest,
     ClassifyNonCombatActionRequest,
+    AbilityCheckRequest,
+    NonCombatStoryExtendRequest,
+    SuggestActionRequest,
 )
 
 # Initialize the model once
-print("Loading LLM (this will take a moment)...")
-model = LLMModel()
+# model = LLMModel()
 
 
 def reload_game_modules():
@@ -29,6 +33,7 @@ def reload_game_modules():
     # List of modules to reload in order of dependency
     modules_to_reload = [
         Const,
+        RollResults,
         FloorHistory,
         ItemClasses,
         EntityClasses,
@@ -39,6 +44,9 @@ def reload_game_modules():
         NonCombatFloorType,
         NonCombatFloorIntroRequest,
         ClassifyNonCombatActionRequest,
+        AbilityCheckRequest,
+        NonCombatStoryExtendRequest,
+        SuggestActionRequest,
         NonCombatFloor,
         DungeonMaster,
     ]
@@ -48,7 +56,6 @@ def reload_game_modules():
         reload(module)
 
     print("All game modules reloaded successfully!")
-    return DungeonMaster.DungeonMaster(model)
 
 
-dm = reload_game_modules()
+reload_game_modules()

@@ -1,5 +1,9 @@
 from game.classes.LLMModel import LLMModel
 from game.classes.NonCombatFloorType import NonCombatFloorType
+from game.classes.EntityClasses import Player
+from game.classes.FloorHistory import FloorHistory
+from game.classes.RollResults import RollResult
+
 from game.llm_api.NonCombatFloorIntroRequest import (
     NonCombatFloorIntroRequest,
     NonCombatFloorIntroResponse,
@@ -10,8 +14,9 @@ from game.llm_api.ClassifyNonCombatActionRequest import (
     ClassifyNonCombatActionResponseSuccess,
     ClassifyNonCombatActionResponseError,
 )
-from game.classes.EntityClasses import Player
-from game.classes.FloorHistory import FloorHistory
+from game.llm_api.AbilityCheckRequest import AbilityCheckRequest
+from game.llm_api.NonCombatStoryExtendRequest import NonCombatStoryExtendRequest
+from game.llm_api.SuggestActionRequest import SuggestActionRequest
 
 import random
 
@@ -27,10 +32,27 @@ class NonCombatFloor:
 
         # Request objects
         self.intro_request = NonCombatFloorIntroRequest(
-            self.model, theme, player.description
+            model, theme, player.description
         )
         self.classify_action_request = ClassifyNonCombatActionRequest(
-            self.model,
+            model,
+            theme,
+            player,
+            self.history,
+        )
+        self.ability_check_request = AbilityCheckRequest(
+            model,
+            player,
+            self.history,
+        )
+        self.story_extend_request = NonCombatStoryExtendRequest(
+            model,
+            theme,
+            player,
+            self.history,
+        )
+        self.suggest_action_request = SuggestActionRequest(
+            model,
             theme,
             player,
             self.history,
@@ -40,6 +62,9 @@ class NonCombatFloor:
         return NonCombatFloor(self.theme, self.player, self.model)
 
     def init_floor(self, mock: bool = False):
+        # Init the data
+        self.end = False
+
         # Randomize the floor type
         self.floor_type = random.choice(list(NonCombatFloorType))
 
@@ -65,10 +90,9 @@ class NonCombatFloor:
         for i, action in enumerate(intro_response.suggested_actions):
             print(f"{i + 1}. {action}")
         print(f"{i + 2}. Go to the next floor.")
-        print(f"{i + 3}. Custom.")
+        print(f"{i + 3}. Write your own action.")
 
     def handle_user_input(self, user_input: str):
-        #! TODO: Error handling
         print("(System): Classifying your action...")
         classify_action_response = self.classify_action_request.send(user_input)
 
@@ -76,7 +100,7 @@ class NonCombatFloor:
             if classify_action_response.action_type == "ability_check":
                 self.handle_ability_check(user_input)
             elif classify_action_response.action_type == "use_item":
-                pass
+                self.handle_use_item(user_input)
             elif classify_action_response.action_type == "go_to_next_floor":
                 self.go_to_next_floor()
 
@@ -100,10 +124,78 @@ class NonCombatFloor:
             )
 
     def handle_ability_check(self, user_input: str):
-        pass
+        #! TODO: Error handling
+        ability_check_response = self.ability_check_request.send(user_input)
 
-    def go_to_next_floor(self):
-        pass
+        # Calculate the player's score
+        roll = random.randint(1, 10)
+        score = roll + self.player.get_attribute(ability_check_response.attribute)
+
+        # Calculate the roll result
+        if roll == 10:
+            # Critical Success
+            roll_result = RollResult.CRITICAL_SUCCESS
+        elif roll == 1:
+            # Critical Failure
+            roll_result = RollResult.CRITICAL_FAILURE
+        else:
+            if score >= ability_check_response.difficulty_class:
+                roll_result = RollResult.SUCCESS
+            else:
+                roll_result = RollResult.FAILURE
+
+        # Print it out for player
+        print(
+            f"(System): Score: {score} = {roll} (Roll) + {self.player.get_attribute(ability_check_response.attribute)} ({ability_check_response.attribute}). The DC is {ability_check_response.difficulty_class}. It is {roll_result.value}."
+        )
+
+        # Get the story extension
+        #! TODO: Error handling
+        story_extend_response = self.story_extend_request.send(
+            player_action=user_input,
+            roll_result=roll_result,
+        )
+
+        # Update the player's health
+        #! TODO: Check player health! If it goes below 0, it will be game over
+        self.player.update_health(story_extend_response.health_change)
+        if self.player.current_health <= 0:
+            print("(System): You are defeated.")
+            self.end = True
+            return
+
+        # Print the story
+        print(story_extend_response.narrative)
+
+        # Add the user input and story extension to the history
+        self.history.add_player_actions(user_input, roll_result)
+        self.history.add_narrative(story_extend_response.summary)
+
+        # Check if the event is ended
+        #! TODO:
+        if story_extend_response.is_event_ended:
+            print("(System): The event is ended.")
+            self.end = True
+            return
+
+        else:
+            # Suggest some actions for the player to take
+            print("(System): Suggesting actions...")
+            #! TODO: Error handling
+            suggest_action_response = self.suggest_action_request.send(
+                recent_history=story_extend_response.narrative,
+            )
+
+            # Print the suggested actions
+            print("(System): Suggested actions:")
+            for i, action in enumerate(suggest_action_response.suggested_actions):
+                print(f"{i + 1}. {action}")
+
+            print(f"{i + 2}. Write your own action.")
 
     def handle_use_item(self, user_input: str):
-        pass
+        raise NotImplementedError
+
+    def go_to_next_floor(self):
+        #! TODO: Think about what information need to be sent back to DM
+        self.end = True

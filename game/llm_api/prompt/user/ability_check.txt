@@ -1,0 +1,7 @@
+Player Description: {player_description}
+History: 
+{history}
+
+Player Action: {player_action}
+
+Please determine the appropriate attribute check and difficulty for this action.

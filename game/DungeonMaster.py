@@ -1,17 +1,18 @@
-from game.classes.LLMModel import LLMModel
-from game.classes.FloorHistory import FloorHistory
 from game.classes.EntityClasses import Player
+from game.classes.FloorHistory import FloorHistory
 from game.classes.ItemClasses import Rarity
-
+from game.classes.LLMModel import LLMModel
 from game.llm_api.BackgroundRequest import BackgroundRequest, BackgroundResponse
-from game.llm_api.WeaponGenerationRequest import (
-    WeaponGenerationRequest,
-    WeaponGenerationResponse,
-)
 from game.llm_api.ThemeCondenseRequest import (
     ThemeCondenseRequest,
     ThemeCondenseResponse,
 )
+from game.llm_api.WeaponGenerationRequest import (
+    WeaponGenerationRequest,
+    WeaponGenerationResponse,
+)
+
+from game.classes.NonCombatFloor import NonCombatFloor
 
 
 class DungeonMaster:
@@ -24,7 +25,7 @@ class DungeonMaster:
         self.weapon_generation_request = WeaponGenerationRequest(self.model)
         self.theme_condense_request = ThemeCondenseRequest(self.model)
 
-    def start_game(self, mock: bool = False):
+    def init_game(self, mock: bool = False):
         # Setup the backstory
         #! TODO: Handle error
         print("(System): Generating the story...")
@@ -92,3 +93,18 @@ class DungeonMaster:
 
         # Print the floor
         print("You are in floor: ", self.current_floor)
+
+        # Now initialize the floor
+        self.non_combat_floor = NonCombatFloor(self.theme, self.player, self.model)
+
+    def start_game(self):
+        self.init_game()
+
+        #! TODO: Now I just use a while loop to simulate the game
+        self.non_combat_floor.init_floor() # First floor
+        while not self.non_combat_floor.end:
+            user_input = input("User: ")
+            self.non_combat_floor.handle_user_input(user_input)
+        
+        print("The End!")
+

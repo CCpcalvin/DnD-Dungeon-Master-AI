@@ -1,0 +1,10 @@
+Game Theme: {theme}
+Player Description: {player_description}
+
+Game History:
+{history}
+
+Player Action: {player_action}
+Roll Result: {roll_result}
+
+Please continue the story based on the above information.

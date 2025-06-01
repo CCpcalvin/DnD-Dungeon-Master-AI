@@ -9,7 +9,7 @@ Player Backstory: {player_backstory}
 - Include subtle hints about the world's lore
 
 2. Weapon Properties:
-- Choose an appropriate weapon type (Sword/Axe/Bow/Staff/Dagger/Spear/Club/Mace)
+- Choose an appropriate weapon type (Eg. Sword/Axe/Bow/Staff/Dagger/Spear/Club/Mace)
 - Give it a creative and thematic name
 - Describe its appearance in 1-2 sentences
 - [Optional] Add a unique special ability that fits the theme

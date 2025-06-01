@@ -1,0 +1,10 @@
+Game Theme: {theme}
+Player Description: {player_description}
+
+Game History: 
+{history}
+
+Recent History in Detail: 
+{recent_history}
+
+Please suggest 1-2 actions the player might want to take next.

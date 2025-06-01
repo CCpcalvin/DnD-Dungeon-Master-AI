@@ -130,8 +130,8 @@ class ClassifyNonCombatActionRequest(LLMRequest):
             - ability_check
             - use_item
             - go_to_next_floor
-            - impossible
             - unknown
+            - narrative_inconsistency
 
         Args:
             user_input: The user input
