@@ -40,12 +40,16 @@ while not game over:
         - The user prompt for `NonCombatStoryExtendRequest` may be "{player_action}. It is successful / unsuccessful."
         - Update the roll result to the history
 
-    - send `NonCombatStoryExtendRequest` based on the result
-      - Update the history and state
-      - If the event is over, send the `LootOrPunishmentRequest` to get the loot or punishment
-        - Update the state
-        - then move to new floor -> end!!
-      - If it is not, keep looping above until the event is over -> move to new floor
+        - send `NonCombatStoryExtendRequest` based on the result
+          - Update the history and state
+          - If the event is over, send the `LootOrPunishmentRequest` to get the loot or punishment
+            - Update the state
+            - then move to new floor -> end!!
+          - If it is not, keep looping above until the event is over -> move to new floor
+
+      - if the action is "use_item", 
+        - send out `ClassifyItemToUseRequest` to get the items to use
+        - Update the state 
 
   - if current floor is combat floors:
     - send `CombatFloorIntroRequest` to get the floor description, enemy
@@ -337,4 +341,21 @@ while not game over:
       - a better weapon? 
       - a item?
 
+
+# Log
+---
+1st June
+---
+Let do not make `ItemIdentificationRequest`. We should ask the user directly on what item he wants to use (ask them to input a number for example), and how he uses it.
+
+Maybe use `ItemUseResolutionRequest` to test whether it is successful or not.
+
+The reason not to use it is that 
+  - There are actually three possible outcomes 
+    - Find the correct one
+    - Confusing item name
+    - Cannot find it 
+
+  - LLM cannot distinguish between the confusing item name and the correct one 
+    - More specifically, we cannot identity these two by looking about the confidence score
 

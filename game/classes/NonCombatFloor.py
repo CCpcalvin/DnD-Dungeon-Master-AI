@@ -1,24 +1,33 @@
-from game.classes.LLMModel import LLMModel
-from game.classes.NonCombatFloorType import NonCombatFloorType
+import random
+from typing import Union
+
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
+from game.classes.LLMModel import LLMModel
+from game.classes.NonCombatFloorType import NonCombatFloorType
 from game.classes.RollResults import RollResult
-
-from game.llm_api.NonCombatFloorIntroRequest import (
-    NonCombatFloorIntroRequest,
-    NonCombatFloorIntroResponse,
+from game.llm_api.AbilityCheckRequest import AbilityCheckRequest
+from game.llm_api.AbilityCheckResolutionRequest import (
+    AbilityCheckResolutionRequest,
+    AbilityCheckResolutionResponse,
 )
 from game.llm_api.ClassifyNonCombatActionRequest import (
     ClassifyNonCombatActionRequest,
     ClassifyNonCombatActionResponse,
-    ClassifyNonCombatActionResponseSuccess,
     ClassifyNonCombatActionResponseError,
+    ClassifyNonCombatActionResponseSuccess,
 )
-from game.llm_api.AbilityCheckRequest import AbilityCheckRequest
-from game.llm_api.NonCombatStoryExtendRequest import NonCombatStoryExtendRequest
-from game.llm_api.SuggestActionRequest import SuggestActionRequest
 
-import random
+from game.llm_api.ItemIdentificationRequest import ItemIdentificationRequest
+from game.llm_api.ItemUseResolutionRequest import (
+    ItemUseResolutionRequest,
+    ItemUseResolutionResponse,
+)
+from game.llm_api.NonCombatFloorIntroRequest import (
+    NonCombatFloorIntroRequest,
+    NonCombatFloorIntroResponse,
+)
+from game.llm_api.SuggestActionRequest import SuggestActionRequest
 
 
 class NonCombatFloor:
@@ -45,13 +54,23 @@ class NonCombatFloor:
             player,
             self.history,
         )
-        self.story_extend_request = NonCombatStoryExtendRequest(
+        self.ability_check_resolution_request = AbilityCheckResolutionRequest(
             model,
             theme,
             player,
             self.history,
         )
         self.suggest_action_request = SuggestActionRequest(
+            model,
+            theme,
+            player,
+            self.history,
+        )
+        self.item_identification_request = ItemIdentificationRequest(
+            model,
+            player,
+        ) #? We didn't use that anymore
+        self.item_use_resolution_request = ItemUseResolutionRequest(
             model,
             theme,
             player,
@@ -151,7 +170,7 @@ class NonCombatFloor:
 
         # Get the story extension
         #! TODO: Error handling
-        story_extend_response = self.story_extend_request.send(
+        story_extend_response = self.ability_check_resolution_request.send(
             player_action=user_input,
             roll_result=roll_result,
         )
@@ -164,16 +183,40 @@ class NonCombatFloor:
             self.end = True
             return
 
+        # Add to the history
+        self.history.add_player_actions(user_input, roll_result)
+
+        self.handle_resolution(story_extend_response)
+
+    def handle_use_item(self, user_input: str):
+        raise NotImplementedError
+
+    def use_item_resolution(self, item_index: int, user_input: str):
+        print("(System): Resolving item usage...")
+        #! TODO: Error handling
+        item_use_resolution_response = self.item_use_resolution_request.send(
+            user_input=user_input,
+            item_to_use=self.player.inventory[item_index],
+        )
+
+        if item_use_resolution_response.is_item_consumed:
+            self.player.inventory.pop(item_index)
+
+        self.handle_resolution(item_use_resolution_response)
+
+    def handle_resolution(
+        self,
+        response: Union[ItemUseResolutionResponse, AbilityCheckResolutionResponse],
+    ):
         # Print the story
-        print(story_extend_response.narrative)
+        print(response.narrative)
 
         # Add the user input and story extension to the history
-        self.history.add_player_actions(user_input, roll_result)
-        self.history.add_narrative(story_extend_response.summary)
+        self.history.add_narrative(response.summary)
 
         # Check if the event is ended
         #! TODO:
-        if story_extend_response.is_event_ended:
+        if response.is_event_ended:
             print("(System): The event is ended.")
             self.end = True
             return
@@ -183,7 +226,7 @@ class NonCombatFloor:
             print("(System): Suggesting actions...")
             #! TODO: Error handling
             suggest_action_response = self.suggest_action_request.send(
-                recent_history=story_extend_response.narrative,
+                recent_history=response.narrative,
             )
 
             # Print the suggested actions
@@ -192,9 +235,6 @@ class NonCombatFloor:
                 print(f"{i + 1}. {action}")
 
             print(f"{i + 2}. Write your own action.")
-
-    def handle_use_item(self, user_input: str):
-        raise NotImplementedError
 
     def go_to_next_floor(self):
         #! TODO: Think about what information need to be sent back to DM

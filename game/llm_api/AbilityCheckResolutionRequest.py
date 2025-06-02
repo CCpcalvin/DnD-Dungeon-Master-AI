@@ -1,23 +1,24 @@
 from __future__ import annotations
-from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
-from game.classes.RollResults import RollResult
-from game.classes.LLMModel import LLMModel
+
+import json
+import os
+from dataclasses import dataclass
+
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
-
+from game.classes.LLMModel import LLMModel
+from game.classes.RollResults import RollResult
+from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
-
-import json, os
-from dataclasses import dataclass
 
 
 @dataclass
-class NonCombatStoryExtendResponse(LLMResponse):
+class AbilityCheckResolutionResponse(LLMResponse):
     @classmethod
-    def process_response(cls, ai_response: dict) -> NonCombatStoryExtendResponse:
+    def process_response(cls, ai_response: dict) -> AbilityCheckResolutionResponse:
         try:
             data = json.loads(ai_response["choices"][0]["message"]["content"])
-            return NonCombatStoryExtendResponseSuccess(
+            return AbilityCheckResolutionResponseSuccess(
                 success=True,
                 message="",
                 ai_response=ai_response,
@@ -27,13 +28,13 @@ class NonCombatStoryExtendResponse(LLMResponse):
                 is_event_ended=data["is_event_ended"],
             )
         except Exception as e:
-            return NonCombatStoryExtendResponseError(
+            return AbilityCheckResolutionResponseError(
                 success=False, message=str(e), ai_response=ai_response
             )
 
 
 @dataclass
-class NonCombatStoryExtendResponseSuccess(NonCombatStoryExtendResponse):
+class AbilityCheckResolutionResponseSuccess(AbilityCheckResolutionResponse):
     narrative: str
     health_change: int
     summary: str
@@ -41,11 +42,13 @@ class NonCombatStoryExtendResponseSuccess(NonCombatStoryExtendResponse):
 
 
 @dataclass
-class NonCombatStoryExtendResponseError(NonCombatStoryExtendResponse):
+class AbilityCheckResolutionResponseError(AbilityCheckResolutionResponse):
     pass
 
 
-class NonCombatStoryExtendRequest(LLMRequest):
+class AbilityCheckResolutionRequest(LLMRequest):
+    prompt_file = "ability_check_resolution.txt"
+
     def __init__(
         self, model: LLMModel, theme: str, player: Player, history: FloorHistory
     ):
@@ -53,17 +56,6 @@ class NonCombatStoryExtendRequest(LLMRequest):
         self.theme = theme
         self.player = player
         self.history = history
-
-        with open(
-            os.path.join(SYSTEM_PROMPT_PATH, "non_combat_story_extend.txt"), "r"
-        ) as f:
-            self.system_prompt = f.read()
-            self.set_system_prompt(self.system_prompt)
-
-        with open(
-            os.path.join(USER_PROMPT_PATH, "non_combat_story_extend.txt"), "r"
-        ) as f:
-            self.user_prompt_template = f.read()
 
         self.set_response_format(
             {
@@ -76,13 +68,20 @@ class NonCombatStoryExtendRequest(LLMRequest):
                         },
                         "health_change": {
                             "type": "integer",
+                            "minimum": -10,
+                            "maximum": 10,
                         },
                         "summary": {
                             "type": "string",
                         },
                         "is_event_ended": {"type": "boolean"},
                     },
-                    "required": ["narrative", "summary", "is_event_ended"],
+                    "required": [
+                        "narrative",
+                        "health_change",
+                        "summary",
+                        "is_event_ended",
+                    ],
                 },
             }
         )
@@ -107,7 +106,7 @@ class NonCombatStoryExtendRequest(LLMRequest):
         self,
         player_action: str,
         roll_result: RollResult,
-    ) -> NonCombatStoryExtendResponse:
+    ) -> AbilityCheckResolutionResponse:
         """Send the story extension request to the LLM."""
         self.update_user_prompt(
             player_action=player_action,
@@ -117,8 +116,8 @@ class NonCombatStoryExtendRequest(LLMRequest):
         ai_response = self.model.get_model().create_chat_completion(
             messages=self.messages,
             response_format=self.response_format,
-            max_tokens=300,
+            max_tokens=400,
             temperature=0.8,
         )
 
-        return NonCombatStoryExtendResponse.process_response(ai_response)
+        return AbilityCheckResolutionResponse.process_response(ai_response)

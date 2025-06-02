@@ -14,6 +14,7 @@ from game.llm_api.WeaponGenerationRequest import (
 
 from game.classes.NonCombatFloor import NonCombatFloor
 
+import game.setup
 
 class DungeonMaster:
     def __init__(self, model: LLMModel):
@@ -105,6 +106,7 @@ class DungeonMaster:
         while not self.non_combat_floor.end:
             user_input = input("User: ")
             self.non_combat_floor.handle_user_input(user_input)
+
         
         print("The End!")
 

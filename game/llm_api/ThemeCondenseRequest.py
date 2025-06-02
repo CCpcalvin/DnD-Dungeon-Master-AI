@@ -42,15 +42,10 @@ class ThemeCondenseResponseError(ThemeCondenseResponse):
 
 
 class ThemeCondenseRequest(LLMRequest):
+    prompt_file = "theme_condense.txt"
+
     def __init__(self, model: LLMModel):
         super().__init__(model)
-
-        with open(os.path.join(SYSTEM_PROMPT_PATH, "theme_condense.txt"), "r") as f:
-            self.system_prompt = f.read()
-            self.set_system_prompt(self.system_prompt)
-
-        with open(os.path.join(USER_PROMPT_PATH, "theme_condense.txt"), "r") as f:
-            self.user_prompt_template = f.read()
 
         self.set_response_format(
             {

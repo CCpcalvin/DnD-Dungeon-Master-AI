@@ -19,6 +19,7 @@ try:
             raise ValueError("No 'model' variable found in IPython namespace")
     else:
         raise ImportError("Not running in IPython")
+
 except (ImportError, ValueError) as e:
     print(f"Warning: {e}. Creating a new model instance.")
     from game.classes.LLMModel import LLMModel
@@ -26,7 +27,7 @@ except (ImportError, ValueError) as e:
     model = LLMModel()
 
 
-def test_non_combat_story_extend():
+def test_ability_check_resolution():
     global model
 
     # Setup dungeon master
@@ -40,36 +41,36 @@ def test_non_combat_story_extend():
     floor1.init_floor(mock=True)
 
     t0 = time.time()
-    floor1.story_extend_request.send_and_save(
-        save_path="./test/mock/non_combat_story_extend_response_success.json",
+    floor1.ability_check_resolution_request.send_and_save(
+        save_path="./test/mock/ability_check_resolution_response_success.json",
         player_action="Examine the symbol more closely",
         roll_result=RollResult.SUCCESS,
     )
     print(f"Time taken: {time.time() - t0}")
 
     t0 = time.time()
-    floor1.story_extend_request.send_and_save(
-        save_path="./test/mock/non_combat_story_extend_response_failure.json",
+    floor1.ability_check_resolution_request.send_and_save(
+        save_path="./test/mock/ability_check_resolution_response_failure.json",
         player_action="Examine the symbol more closely",
         roll_result=RollResult.FAILURE,
     )
     print(f"Time taken: {time.time() - t0}")
 
     t0 = time.time()
-    floor1.story_extend_request.send_and_save(
-        save_path="./test/mock/non_combat_story_extend_response_critical_success.json",
+    floor1.ability_check_resolution_request.send_and_save(
+        save_path="./test/mock/ability_check_resolution_response_critical_success.json",
         player_action="Examine the symbol more closely",
         roll_result=RollResult.CRITICAL_SUCCESS,
     )
     print(f"Time taken: {time.time() - t0}")
 
     t0 = time.time()
-    floor1.story_extend_request.send_and_save(
-        save_path="./test/mock/non_combat_story_extend_response_critical_failure.json",
+    floor1.ability_check_resolution_request.send_and_save(
+        save_path="./test/mock/ability_check_resolution_response_critical_failure.json",
         player_action="Examine the symbol more closely",
         roll_result=RollResult.CRITICAL_FAILURE,
     )
     print(f"Time taken: {time.time() - t0}")
 
 
-test_non_combat_story_extend()
+test_ability_check_resolution()

@@ -73,6 +73,8 @@ class ClassifyNonCombatActionResponseError(ClassifyNonCombatActionResponse):
 
 @dataclass
 class ClassifyNonCombatActionRequest(LLMRequest):
+    prompt_file = "classify_non_combat_action.txt"
+
     def __init__(
         self,
         model: LLMModel,
@@ -84,19 +86,6 @@ class ClassifyNonCombatActionRequest(LLMRequest):
         self.theme = theme
         self.player = player
         self.history = history
-
-        # Load system prompt
-        with open(
-            os.path.join(SYSTEM_PROMPT_PATH, "classify_non_combat_action.txt"), "r"
-        ) as f:
-            self.system_prompt = f.read()
-            self.set_system_prompt(self.system_prompt)
-
-        # Load user prompt template
-        with open(
-            os.path.join(USER_PROMPT_PATH, "classify_non_combat_action.txt"), "r"
-        ) as f:
-            self.user_prompt_template = f.read()
 
         # Set response format
         self.set_response_format(

@@ -1,0 +1,11 @@
+Game Theme: {theme}
+Player Description: {player_description}
+
+Game History:
+{history}
+
+Player Action: {player_action}
+Item to Use: 
+{item_to_use}
+
+Please continue the story based on the above information.

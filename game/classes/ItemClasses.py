@@ -1,5 +1,6 @@
 import enum
 from dataclasses import dataclass
+import json
 
 
 @enum.unique
@@ -27,3 +28,25 @@ class Item:
     rarity: Rarity
     description: str
     effect: str
+
+    def to_prompt(self):
+        to_print = ""
+        to_print += f"Name: {self.name}\n"
+        to_print += f"Rarity: {self.rarity.value}\n"
+        to_print += f"Description: {self.description}\n"
+        to_print += f"Effect: {self.effect}\n"
+        return to_print
+
+    def to_dict(self) -> dict:
+        """Convert the class to a dictionary."""
+        return {
+            "name": self.name,
+            "rarity": self.rarity.value,
+            "description": self.description,
+            "effect": self.effect,
+        }
+
+    def __json__(self) -> dict:
+        """Make the class JSON-serializable."""
+        return self.to_dict()
+

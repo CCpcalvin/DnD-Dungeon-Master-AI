@@ -49,23 +49,12 @@ class NonCombatFloorIntroResponseError(NonCombatFloorIntroResponse):
 
 @dataclass
 class NonCombatFloorIntroRequest(LLMRequest):
+    prompt_file = "non_combat_floor_intro.txt"
+
     def __init__(self, model: LLMModel, theme: str, player_description: str):
         super().__init__(model)
         self.theme = theme
         self.player_description = player_description
-
-        # Load system prompt
-        with open(
-            os.path.join(SYSTEM_PROMPT_PATH, "non_combat_floor_intro.txt"), "r"
-        ) as f:
-            self.system_prompt = f.read()
-            self.set_system_prompt(self.system_prompt)
-
-        # Load user prompt template
-        with open(
-            os.path.join(USER_PROMPT_PATH, "non_combat_floor_intro.txt"), "r"
-        ) as f:
-            self.user_prompt_template = f.read()
 
         # Set response format
         self.set_response_format(

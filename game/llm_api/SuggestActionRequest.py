@@ -40,6 +40,8 @@ class SuggestActionResponseError(SuggestActionResponse):
 
 
 class SuggestActionRequest(LLMRequest):
+    prompt_file = "suggest_action.txt"
+
     def __init__(
         self, model: LLMModel, theme: str, player: Player, history: FloorHistory
     ):
@@ -47,13 +49,6 @@ class SuggestActionRequest(LLMRequest):
         self.theme = theme
         self.player = player
         self.history = history
-
-        with open(os.path.join(SYSTEM_PROMPT_PATH, "suggest_action.txt"), "r") as f:
-            self.system_prompt = f.read()
-            self.set_system_prompt(self.system_prompt)
-
-        with open(os.path.join(USER_PROMPT_PATH, "suggest_action.txt"), "r") as f:
-            self.user_prompt_template = f.read()
 
         self.set_response_format(
             {

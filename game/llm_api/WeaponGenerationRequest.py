@@ -58,17 +58,10 @@ class WeaponGenerationResponseError(WeaponGenerationResponse):
 
 
 class WeaponGenerationRequest(LLMRequest):
+    prompt_file = "weapon.txt"
+
     def __init__(self, model: LLMModel):
         super().__init__(model)
-
-        # Load system prompt
-        with open(os.path.join(SYSTEM_PROMPT_PATH, "weapon.txt"), "r") as f:
-            self.system_prompt = f.read()
-            self.set_system_prompt(self.system_prompt)
-
-        # Load user prompt template
-        with open(os.path.join(USER_PROMPT_PATH, "weapon.txt"), "r") as f:
-            self.user_prompt_template = f.read()
 
         # Set response format
         self.set_response_format(

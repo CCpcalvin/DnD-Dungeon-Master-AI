@@ -1,7 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from game.classes.ItemClasses import Item, Weapon
 
-import random
+import random, json
 
 
 @dataclass
@@ -84,7 +84,17 @@ class Player(Entity):
         for item in self.inventory:
             to_print.append(item.name)
 
-        return ", ".join(to_print)
+        return str(to_print) 
+    
+    def inventory_full_prompt(self) -> str:
+        if len(self.inventory) == 0:
+            return "No items in inventory"
+
+        to_print: list[str] = []
+        for item in self.inventory:
+            to_print.append(json.dumps(asdict(item)))
+
+        return str(to_print)
     
     def get_attribute(self, attribute: str) -> int:
         return getattr(self, attribute)

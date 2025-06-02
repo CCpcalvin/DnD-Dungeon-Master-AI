@@ -38,18 +38,13 @@ class AbilityCheckResponseError(AbilityCheckResponse):
 
 
 class AbilityCheckRequest(LLMRequest):
+    prompt_file = "ability_check.txt"
+
     def __init__(self, model: LLMModel, player: Player, history: FloorHistory):
         super().__init__(model)
 
         self.player = player
         self.history = history
-
-        with open(os.path.join(SYSTEM_PROMPT_PATH, "ability_check.txt"), "r") as f:
-            self.system_prompt = f.read()
-            self.set_system_prompt(self.system_prompt)
-
-        with open(os.path.join(USER_PROMPT_PATH, "ability_check.txt"), "r") as f:
-            self.user_prompt_template = f.read()
 
         # Set response format
         self.set_response_format(

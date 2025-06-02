@@ -1,0 +1,4 @@
+Player's input: {user_input}
+
+Inventory:
+{inventory_items}

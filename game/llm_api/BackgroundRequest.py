@@ -44,16 +44,10 @@ class BackgroundResponseError(BackgroundResponse):
 
 
 class BackgroundRequest(LLMRequest):
+    prompt_file = "background.txt"
+
     def __init__(self, model: LLMModel):
         super().__init__(model)
-
-        with open(os.path.join(SYSTEM_PROMPT_PATH, "background.txt"), "r") as f:
-            self.system_prompt = f.read()
-            self.set_system_prompt(self.system_prompt)
-
-        with open(os.path.join(USER_PROMPT_PATH, "background.txt"), "r") as f:
-            self.user_prompt = f.read()
-            self.set_user_prompt(self.user_prompt)
 
         self.set_response_format(
             {
@@ -69,8 +63,12 @@ class BackgroundRequest(LLMRequest):
                 },
             }
         )
+    
+    def update_user_prompt(self):
+        self.set_user_prompt(self.user_prompt_template)
 
     def send(self) -> BackgroundResponse:
+        self.update_user_prompt()
         ai_response = self.model.get_model().create_chat_completion(
             messages=self.messages,
             response_format=self.response_format,

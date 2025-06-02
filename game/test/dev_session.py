@@ -4,9 +4,10 @@ sys.path.append("..")
 
 from importlib import reload
 
-from game.classes.LLMModel import LLMModel
+from game.models import LLMProvider
 
-from game import Const, DungeonMaster
+from game import Const, setup
+from game import DungeonMaster
 from game.classes import RollResults
 from game.classes import FloorHistory, ItemClasses, EntityClasses
 from game.classes import NonCombatFloorType, NonCombatFloor
@@ -18,12 +19,11 @@ from game.llm_api import (
     NonCombatFloorIntroRequest,
     ClassifyNonCombatActionRequest,
     AbilityCheckRequest,
-    NonCombatStoryExtendRequest,
+    AbilityCheckResolutionRequest,
     SuggestActionRequest,
+    ItemIdentificationRequest,
+    ItemUseResolutionRequest,
 )
-
-# Initialize the model once
-# model = LLMModel()
 
 
 def reload_game_modules():
@@ -33,6 +33,8 @@ def reload_game_modules():
     # List of modules to reload in order of dependency
     modules_to_reload = [
         Const,
+        setup,
+        LLMProvider,
         RollResults,
         FloorHistory,
         ItemClasses,
@@ -45,8 +47,10 @@ def reload_game_modules():
         NonCombatFloorIntroRequest,
         ClassifyNonCombatActionRequest,
         AbilityCheckRequest,
-        NonCombatStoryExtendRequest,
+        AbilityCheckResolutionRequest,
         SuggestActionRequest,
+        ItemIdentificationRequest,
+        ItemUseResolutionRequest,
         NonCombatFloor,
         DungeonMaster,
     ]
