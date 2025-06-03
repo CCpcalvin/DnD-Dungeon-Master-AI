@@ -1,10 +1,22 @@
 from __future__ import annotations
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 
-import os, json
+import json
 from dataclasses import dataclass
+from pydantic import BaseModel, Field
+
+
+class ThemeCondenseResponseModel(BaseModel):
+    theme: str = Field(
+        ...,
+        description="A 20 words or less description of the overall theme",
+    )
+    player_backstory: str = Field(
+        ...,
+        description="A 30 words or less description of the player's backstory",
+    )
 
 
 @dataclass
@@ -44,8 +56,8 @@ class ThemeCondenseResponseError(ThemeCondenseResponse):
 class ThemeCondenseRequest(LLMRequest):
     prompt_file = "theme_condense.txt"
 
-    def __init__(self, model: LLMModel):
-        super().__init__(model)
+    def __init__(self, provider: LLMProvider):
+        super().__init__(provider)
 
         self.set_response_format(
             {
@@ -69,11 +81,22 @@ class ThemeCondenseRequest(LLMRequest):
         )
 
     def send(self, theme: str, player_backstory: str) -> ThemeCondenseResponse:
+        """
+        Send the theme condense request to the LLM.
+
+        Args:
+            theme: The original theme text
+            player_backstory: The player's backstory
+
+        Returns:
+            ThemeCondenseResponse: The condensed theme and backstory
+        """
         self.update_user_prompt(theme, player_backstory)
-        ai_response = self.model.get_model().create_chat_completion(
+
+        ai_response = self.provider.get_completion(
+            response_model=ThemeCondenseResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
-            max_tokens=100,
-            temperature=0.4,
+            max_tokens=200,
+            temperature=0.5,
         )
         return ThemeCondenseResponse.process_response(ai_response)

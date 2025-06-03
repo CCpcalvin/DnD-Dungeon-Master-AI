@@ -1,13 +1,28 @@
 from __future__ import annotations
 
 from game.classes.EntityClasses import Player
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
 from game.classes.FloorHistory import FloorHistory
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
-from dataclasses import dataclass
 
-import os, json
+from dataclasses import dataclass
+from pydantic import BaseModel, Field
+from typing import Literal
+
+import json
+
+
+class ClassifyNonCombatActionResponseModel(BaseModel):
+    action_type: Literal["ability_check", "use_item", "go_to_next_floor", "unknown"] = (
+        Field(
+            ...,
+            description="The type of action: 'ability_check', 'use_item', 'go_to_next_floor', or 'unknown'",
+        )
+    )
+    narrative_consistency: bool = Field(
+        ..., description="Whether the user input is consistent with the narrative"
+    )
 
 
 @dataclass
@@ -77,12 +92,12 @@ class ClassifyNonCombatActionRequest(LLMRequest):
 
     def __init__(
         self,
-        model: LLMModel,
+        provider: LLMProvider,
         theme: str,
         player: Player,
         history: FloorHistory,
     ):
-        super().__init__(model)
+        super().__init__(provider)
         self.theme = theme
         self.player = player
         self.history = history
@@ -115,30 +130,20 @@ class ClassifyNonCombatActionRequest(LLMRequest):
 
     def send(self, user_input: str) -> ClassifyNonCombatActionResponse:
         """
-        Classify the user input into one of the following actions:
-            - ability_check
-            - use_item
-            - go_to_next_floor
-            - unknown
-            - narrative_inconsistency
+        Send the classification request to the LLM.
 
         Args:
-            user_input: The user input
+            user_input: The player's input text to classify
 
         Returns:
-            ClassifyNonCombatActionResponse: The classified action
+            ClassifyNonCombatActionResponse: The classified action type and narrative consistency
         """
-
-        # Set the user prompt with the provided values
         self.update_user_prompt(user_input)
 
-        # Get the AI response
-        ai_response = self.model.get_model().create_chat_completion(
+        ai_response = self.provider.get_completion(
+            response_model=ClassifyNonCombatActionResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
             max_tokens=50,
-            temperature=0.4,
+            temperature=0.1,
         )
-
-        # Process and return the response
         return ClassifyNonCombatActionResponse.process_response(ai_response)

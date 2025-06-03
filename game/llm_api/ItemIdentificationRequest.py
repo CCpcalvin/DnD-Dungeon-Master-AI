@@ -1,11 +1,24 @@
 from __future__ import annotations
 
+from game.classes.EntityClasses import Player
+from game.models.LLMProvider import LLMProvider
+from game.llm_api.LLMRequest import LLMRequest, LLMResponse
+
 import json
 from dataclasses import dataclass
+from pydantic import BaseModel, Field
 
-from game.classes.EntityClasses import Player
-from game.classes.LLMModel import LLMModel
-from game.llm_api.LLMRequest import LLMRequest, LLMResponse
+
+class ItemIdentificationResponseModel(BaseModel):
+    item_index: int = Field(
+        ..., ge=0, description="Index of the identified item in the player's inventory"
+    )
+    confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score of the identification (0.0 to 1.0)",
+    )
 
 
 @dataclass
@@ -41,8 +54,8 @@ class ItemIdentificationResponseError(ItemIdentificationResponse):
 class ItemIdentificationRequest(LLMRequest):
     prompt_file = "item_identification.txt"
 
-    def __init__(self, model: LLMModel, player: Player):
-        super().__init__(model)
+    def __init__(self, provider: LLMProvider, player: Player):
+        super().__init__(provider)
         self.player = player
 
         self.set_response_format(
@@ -81,20 +94,19 @@ class ItemIdentificationRequest(LLMRequest):
             )
         )
 
-    def send(
-        self,
-        user_input: str,
-    ) -> ItemIdentificationResponse:
-        """Send the story extension request to the LLM."""
-        self.update_user_prompt(
-            user_input=user_input,
-        )
+    def send(self) -> ItemIdentificationResponse:
+        """
+        Send the item identification request to the LLM.
 
-        ai_response = self.model.get_model().create_chat_completion(
+        Returns:
+            ItemIdentificationResponse: The identified item and confidence
+        """
+        self.update_user_prompt(user_input="")
+
+        ai_response = self.provider.get_completion(
+            response_model=ItemIdentificationResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
-            max_tokens=400,
-            temperature=0.8,
+            max_tokens=100,
+            temperature=0.1,
         )
-
         return ItemIdentificationResponse.process_response(ai_response)

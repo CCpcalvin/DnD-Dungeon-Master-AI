@@ -6,10 +6,27 @@ from dataclasses import dataclass
 
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.classes.RollResults import RollResult
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
+from pydantic import BaseModel, Field
+
+
+class AbilityCheckResolutionResponseModel(BaseModel):
+    narrative: str = Field(
+        ..., description="A narrative description of the check resolution"
+    )
+    health_change: int = Field(
+        ...,
+        ge=-10,
+        le=10,
+        description="The amount of health change from the check (-10 to 10)",
+    )
+    summary: str = Field(..., description="A brief summary of the outcome")
+    is_event_ended: bool = Field(
+        ..., description="Whether the event is concluded after this check"
+    )
 
 
 @dataclass
@@ -50,9 +67,9 @@ class AbilityCheckResolutionRequest(LLMRequest):
     prompt_file = "ability_check_resolution.txt"
 
     def __init__(
-        self, model: LLMModel, theme: str, player: Player, history: FloorHistory
+        self, provider: LLMProvider, theme: str, player: Player, history: FloorHistory
     ):
-        super().__init__(model)
+        super().__init__(provider)
         self.theme = theme
         self.player = player
         self.history = history
@@ -103,21 +120,24 @@ class AbilityCheckResolutionRequest(LLMRequest):
         )
 
     def send(
-        self,
-        player_action: str,
-        roll_result: RollResult,
+        self, player_roll: int, difficulty_class: int
     ) -> AbilityCheckResolutionResponse:
-        """Send the story extension request to the LLM."""
-        self.update_user_prompt(
-            player_action=player_action,
-            roll_result=roll_result,
-        )
+        """
+        Send the request to the LLM and return the response.
 
-        ai_response = self.model.get_model().create_chat_completion(
+        Args:
+            player_roll: The player's roll result (1-20)
+            difficulty_class: The difficulty class of the check
+
+        Returns:
+            AbilityCheckResolutionResponse: The response from the LLM
+        """
+        self.update_user_prompt(player_roll, difficulty_class)
+
+        ai_response = self.provider.get_completion(
+            response_model=AbilityCheckResolutionResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
-            max_tokens=400,
-            temperature=0.8,
+            max_tokens=100,
+            temperature=0.4,
         )
-
         return AbilityCheckResolutionResponse.process_response(ai_response)

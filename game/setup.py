@@ -11,4 +11,3 @@ if not hasattr(json.JSONEncoder, '_is_patched'):
     json.JSONEncoder.default = _json_encoder_default
     json.JSONEncoder._is_patched = True  # Prevent multiple patches
 
-    

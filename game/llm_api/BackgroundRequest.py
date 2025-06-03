@@ -1,10 +1,17 @@
 from __future__ import annotations
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 
 import os, json
 from dataclasses import dataclass
+from pydantic import BaseModel, Field
+
+
+class BackgroundResponseModel(BaseModel):
+    theme: str = Field(..., description="The game's theme setting")
+    player_backstory: str = Field(..., description="The player character's backstory")
+    player_motivation: str = Field(..., description="The player character's motivation")
 
 
 @dataclass
@@ -46,8 +53,8 @@ class BackgroundResponseError(BackgroundResponse):
 class BackgroundRequest(LLMRequest):
     prompt_file = "background.txt"
 
-    def __init__(self, model: LLMModel):
-        super().__init__(model)
+    def __init__(self, provider: LLMProvider):
+        super().__init__(provider)
 
         self.set_response_format(
             {
@@ -63,15 +70,16 @@ class BackgroundRequest(LLMRequest):
                 },
             }
         )
-    
+
     def update_user_prompt(self):
         self.set_user_prompt(self.user_prompt_template)
 
     def send(self) -> BackgroundResponse:
         self.update_user_prompt()
-        ai_response = self.model.get_model().create_chat_completion(
+
+        ai_response = self.provider.get_completion(
+            response_model=BackgroundResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
             max_tokens=500,
             temperature=0.8,
         )

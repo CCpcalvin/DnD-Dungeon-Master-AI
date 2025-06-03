@@ -1,4 +1,4 @@
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 
 import json, os
@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 
 class LLMRequest(ABC):
-    def __init__(self, model: LLMModel):
-        self.model = model
+    def __init__(self, provider: LLMProvider):
+        self.provider = provider
         self.messages = [
             {"role": "system", "content": ""},
             {"role": "user", "content": ""},
@@ -66,8 +66,8 @@ class LLMResponse:
     message: str
     ai_response: dict
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def process_response(cls, ai_response: dict):
         pass
 

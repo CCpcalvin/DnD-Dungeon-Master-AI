@@ -3,14 +3,17 @@ from typing import Union
 
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.classes.NonCombatFloorType import NonCombatFloorType
 from game.classes.RollResults import RollResult
-from game.llm_api.AbilityCheckRequest import AbilityCheckRequest
-from game.llm_api.AbilityCheckResolutionRequest import (
-    AbilityCheckResolutionRequest,
-    AbilityCheckResolutionResponse,
+
+from game.llm_api.NonCombatFloorIntroRequest import (
+    NonCombatFloorIntroRequest,
+    NonCombatFloorIntroResponse,
+    NonCombatFloorIntroResponseSuccess,
+    NonCombatFloorIntroResponseError,
 )
+
 from game.llm_api.ClassifyNonCombatActionRequest import (
     ClassifyNonCombatActionRequest,
     ClassifyNonCombatActionResponse,
@@ -18,60 +21,68 @@ from game.llm_api.ClassifyNonCombatActionRequest import (
     ClassifyNonCombatActionResponseSuccess,
 )
 
+from game.llm_api.AbilityCheckRequest import AbilityCheckRequest
+
+from game.llm_api.AbilityCheckResolutionRequest import (
+    AbilityCheckResolutionRequest,
+    AbilityCheckResolutionResponse,
+    AbilityCheckResolutionResponseError,
+    AbilityCheckResolutionResponseSuccess,
+)
+
 from game.llm_api.ItemIdentificationRequest import ItemIdentificationRequest
 from game.llm_api.ItemUseResolutionRequest import (
     ItemUseResolutionRequest,
     ItemUseResolutionResponse,
+    ItemUseResolutionResponseError,
+    ItemUseResolutionResponseSuccess,
 )
-from game.llm_api.NonCombatFloorIntroRequest import (
-    NonCombatFloorIntroRequest,
-    NonCombatFloorIntroResponse,
-)
+
 from game.llm_api.SuggestActionRequest import SuggestActionRequest
 
 
 class NonCombatFloor:
-    def __init__(self, theme: str, player: Player, model: LLMModel):
+    def __init__(self, theme: str, player: Player, provider: LLMProvider):
         self.theme = theme
         self.player = player
-        self.model = model
+        self.provider = provider
 
         # History
         self.history: FloorHistory = FloorHistory()
 
         # Request objects
         self.intro_request = NonCombatFloorIntroRequest(
-            model, theme, player.description
+            provider, theme, player.description
         )
         self.classify_action_request = ClassifyNonCombatActionRequest(
-            model,
+            provider,
             theme,
             player,
             self.history,
         )
         self.ability_check_request = AbilityCheckRequest(
-            model,
+            provider,
             player,
             self.history,
         )
         self.ability_check_resolution_request = AbilityCheckResolutionRequest(
-            model,
+            provider,
             theme,
             player,
             self.history,
         )
         self.suggest_action_request = SuggestActionRequest(
-            model,
+            provider,
             theme,
             player,
             self.history,
         )
         self.item_identification_request = ItemIdentificationRequest(
-            model,
+            provider,
             player,
-        ) #? We didn't use that anymore
+        )  # ? We didn't use that anymore
         self.item_use_resolution_request = ItemUseResolutionRequest(
-            model,
+            provider,
             theme,
             player,
             self.history,
@@ -96,6 +107,12 @@ class NonCombatFloor:
             )
         else:
             intro_response = self.intro_request.send(self.floor_type)
+            if isinstance(intro_response, NonCombatFloorIntroResponseError):
+                print(
+                    "(System): Error on generating floor description. Please try again."
+                )
+                print("Error: ", intro_response.message)
+                return
 
         # Set the description
         self.description = intro_response.description
@@ -119,7 +136,7 @@ class NonCombatFloor:
             if classify_action_response.action_type == "ability_check":
                 self.handle_ability_check(user_input)
             elif classify_action_response.action_type == "use_item":
-                self.handle_use_item(user_input)
+                self.handle_use_item()
             elif classify_action_response.action_type == "go_to_next_floor":
                 self.go_to_next_floor()
 
@@ -188,8 +205,13 @@ class NonCombatFloor:
 
         self.handle_resolution(story_extend_response)
 
-    def handle_use_item(self, user_input: str):
-        raise NotImplementedError
+    def handle_use_item(self):
+        item_index = int(
+            input("(System): Please input the item index you want to use.")
+        )
+        user_input = input("(System): How do you use the item?")
+
+        self.use_item_resolution(item_index, user_input)
 
     def use_item_resolution(self, item_index: int, user_input: str):
         print("(System): Resolving item usage...")

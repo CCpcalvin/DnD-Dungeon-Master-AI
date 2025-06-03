@@ -1,12 +1,19 @@
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
 from game.classes.ItemClasses import Rarity
-from game.classes.LLMModel import LLMModel
-from game.llm_api.BackgroundRequest import BackgroundRequest, BackgroundResponse
+from game.models.LLMProvider import LLMProvider
+
+from game.llm_api.BackgroundRequest import (
+    BackgroundRequest,
+    BackgroundResponse,
+    BackgroundResponseError,
+)
+
 from game.llm_api.ThemeCondenseRequest import (
     ThemeCondenseRequest,
     ThemeCondenseResponse,
 )
+
 from game.llm_api.WeaponGenerationRequest import (
     WeaponGenerationRequest,
     WeaponGenerationResponse,
@@ -16,15 +23,16 @@ from game.classes.NonCombatFloor import NonCombatFloor
 
 import game.setup
 
+
 class DungeonMaster:
-    def __init__(self, model: LLMModel):
-        self.model = model
+    def __init__(self, provider: LLMProvider):
+        self.provider = provider
         self.history: list[FloorHistory] = []
 
         # Request objects
-        self.background_request = BackgroundRequest(self.model)
-        self.weapon_generation_request = WeaponGenerationRequest(self.model)
-        self.theme_condense_request = ThemeCondenseRequest(self.model)
+        self.background_request = BackgroundRequest(self.provider)
+        self.weapon_generation_request = WeaponGenerationRequest(self.provider)
+        self.theme_condense_request = ThemeCondenseRequest(self.provider)
 
     def init_game(self, mock: bool = False):
         # Setup the backstory
@@ -36,6 +44,11 @@ class DungeonMaster:
             )
         else:
             background_response = self.background_request.send()
+
+        if isinstance(background_response, BackgroundResponseError):
+            print("(System): Error on generating the story. Please try again.")
+            print("Error: ", background_response.message)
+            return
 
         # Print the backstory
         print("Theme: ", background_response.theme)
@@ -96,17 +109,15 @@ class DungeonMaster:
         print("You are in floor: ", self.current_floor)
 
         # Now initialize the floor
-        self.non_combat_floor = NonCombatFloor(self.theme, self.player, self.model)
+        self.non_combat_floor = NonCombatFloor(self.theme, self.player, self.provider)
 
     def start_game(self):
         self.init_game()
 
         #! TODO: Now I just use a while loop to simulate the game
-        self.non_combat_floor.init_floor() # First floor
+        self.non_combat_floor.init_floor()  # First floor
         while not self.non_combat_floor.end:
             user_input = input("User: ")
             self.non_combat_floor.handle_user_input(user_input)
 
-        
         print("The End!")
-

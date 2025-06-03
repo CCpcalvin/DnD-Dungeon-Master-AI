@@ -1,10 +1,28 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
 
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
-import os, json
+
+import json
+from typing import Literal
+from pydantic import BaseModel, Field
+
+
+class AbilityCheckResponseModel(BaseModel):
+    attribute: Literal[
+        "strength", "dexterity", "intelligence", "wisdom", "charisma"
+    ] = Field(
+        ...,
+        description="The attribute to check. Must be one of: strength, dexterity, intelligence, wisdom, or charisma.",
+    )
+    difficulty_class: int = Field(
+        ...,
+        description="The difficulty class of the check.",
+        ge=3,
+        le=19,
+    )
 
 
 @dataclass
@@ -28,8 +46,8 @@ class AbilityCheckResponse(LLMResponse):
 
 @dataclass
 class AbilityCheckResponseSuccess(AbilityCheckResponse):
-    attribute: str = None
-    difficulty_class: int = None
+    attribute: str
+    difficulty_class: int
 
 
 @dataclass
@@ -40,8 +58,8 @@ class AbilityCheckResponseError(AbilityCheckResponse):
 class AbilityCheckRequest(LLMRequest):
     prompt_file = "ability_check.txt"
 
-    def __init__(self, model: LLMModel, player: Player, history: FloorHistory):
-        super().__init__(model)
+    def __init__(self, provider: LLMProvider, player: Player, history: FloorHistory):
+        super().__init__(provider)
 
         self.player = player
         self.history = history
@@ -91,9 +109,9 @@ class AbilityCheckRequest(LLMRequest):
         self.update_user_prompt(user_input)
 
         """Send the request to the LLM and return the response."""
-        ai_response = self.model.get_model().create_chat_completion(
+        ai_response = self.provider.get_completion(
+            response_model=AbilityCheckResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
             max_tokens=50,
             temperature=0.4,
         )

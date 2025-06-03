@@ -1,12 +1,28 @@
 from __future__ import annotations
 
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.classes.ItemClasses import Rarity, Weapon
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 
 import os, json
 from dataclasses import dataclass
+from pydantic import BaseModel, Field
+
+
+class WeaponGenerationResponseModel(BaseModel):
+    name: str = Field(..., description="The name of the generated weapon")
+    type: str = Field(
+        ..., description="The type of weapon (e.g., 'sword', 'staff', 'bow')"
+    )
+    description: str = Field(
+        ...,
+        description="A detailed description of the weapon's appearance and properties",
+    )
+    special_ability: str = Field(
+        ...,
+        description="A special ability or property that makes this weapon unique",
+    )
 
 
 @dataclass
@@ -60,8 +76,8 @@ class WeaponGenerationResponseError(WeaponGenerationResponse):
 class WeaponGenerationRequest(LLMRequest):
     prompt_file = "weapon.txt"
 
-    def __init__(self, model: LLMModel):
-        super().__init__(model)
+    def __init__(self, provider: LLMProvider):
+        super().__init__(provider)
 
         # Set response format
         self.set_response_format(
@@ -109,17 +125,12 @@ class WeaponGenerationRequest(LLMRequest):
         Returns:
             WeaponResponse: The generated weapon details or an error response
         """
-
-        # Set the user prompt with the provided values
         self.update_user_prompt(theme, player_backstory, rarity)
 
-        # Get the AI response
-        ai_response = self.model.get_model().create_chat_completion(
+        ai_response = self.provider.get_completion(
+            response_model=WeaponGenerationResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
             max_tokens=200,
             temperature=0.8,
         )
-
-        # Process and return the response
         return WeaponGenerationResponse.process_response(ai_response)

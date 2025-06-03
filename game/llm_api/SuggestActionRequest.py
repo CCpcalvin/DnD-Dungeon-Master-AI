@@ -1,14 +1,25 @@
 from __future__ import annotations
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 from game.classes.RollResults import RollResult
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
 
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
 
-import json, os
+import json
 from dataclasses import dataclass
+from pydantic import BaseModel, Field
+from typing import List
+
+
+class SuggestActionResponseModel(BaseModel):
+    suggested_actions: List[str] = Field(
+        ...,
+        min_items=1,
+        max_items=2,
+        description="List of suggested actions for the player (1-2 items)",
+    )
 
 
 @dataclass
@@ -43,9 +54,9 @@ class SuggestActionRequest(LLMRequest):
     prompt_file = "suggest_action.txt"
 
     def __init__(
-        self, model: LLMModel, theme: str, player: Player, history: FloorHistory
+        self, provider: LLMProvider, theme: str, player: Player, history: FloorHistory
     ):
-        super().__init__(model)
+        super().__init__(provider)
         self.theme = theme
         self.player = player
         self.history = history
@@ -82,20 +93,19 @@ class SuggestActionRequest(LLMRequest):
             )
         )
 
-    def send(
-        self,
-        recent_history: str,
-    ) -> SuggestActionResponse:
-        """Send the story extension request to the LLM."""
-        self.update_user_prompt(
-            recent_history=recent_history,
-        )
+    def send(self) -> SuggestActionResponse:
+        """
+        Send the suggest action request to the LLM.
 
-        ai_response = self.model.get_model().create_chat_completion(
+        Returns:
+            SuggestActionResponse: The suggested actions for the player
+        """
+        self.update_user_prompt("")
+
+        ai_response = self.provider.get_completion(
+            response_model=SuggestActionResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
-            max_tokens=100,
-            temperature=0.8,
+            max_tokens=200,
+            temperature=0.7,
         )
-
         return SuggestActionResponse.process_response(ai_response)

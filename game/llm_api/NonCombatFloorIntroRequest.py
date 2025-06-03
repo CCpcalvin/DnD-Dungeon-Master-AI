@@ -1,12 +1,31 @@
 from __future__ import annotations
 
-from game.classes.LLMModel import LLMModel
+from game.models.LLMProvider import LLMProvider
 from game.llm_api.LLMRequest import LLMRequest, LLMResponse
 from game.classes.NonCombatFloorType import NonCombatFloorType
-from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
-from dataclasses import dataclass
 
-import os, json
+from dataclasses import dataclass
+from pydantic import BaseModel, Field
+from typing import List
+import json
+
+
+class NonCombatFloorIntroResponseModel(BaseModel):
+    description: str = Field(
+        ...,
+        description="A detailed description of the floor's environment and atmosphere",
+    )
+    investigation_hook: str = Field(
+        ...,
+        description="A narrative hook to engage the player in investigating the floor",
+    )
+    suggested_actions: List[str] = Field(
+        ...,
+        min_items=1,
+        max_items=2,
+        description="List of suggested actions the player might take (1-2 items)",
+    )
+    summary: str = Field(..., description="A brief summary of the floor's key features")
 
 
 @dataclass
@@ -51,8 +70,8 @@ class NonCombatFloorIntroResponseError(NonCombatFloorIntroResponse):
 class NonCombatFloorIntroRequest(LLMRequest):
     prompt_file = "non_combat_floor_intro.txt"
 
-    def __init__(self, model: LLMModel, theme: str, player_description: str):
-        super().__init__(model)
+    def __init__(self, provider: LLMProvider, theme: str, player_description: str):
+        super().__init__(provider)
         self.theme = theme
         self.player_description = player_description
 
@@ -93,25 +112,20 @@ class NonCombatFloorIntroRequest(LLMRequest):
 
     def send(self, floor_type: NonCombatFloorType) -> NonCombatFloorIntroResponse:
         """
-        Generate a floor description and investigation hook based on the provided floor type.
+        Send the non-combat floor intro request to the LLM.
 
         Args:
-            floor_type: The type of the floor
+            floor_type: The type of non-combat floor
 
         Returns:
-            NonCombatFloorIntroResponse: The generated floor description and investigation hook
+            NonCombatFloorIntroResponse: The generated floor introduction
         """
-
-        # Set the user prompt with the provided values
         self.update_user_prompt(floor_type)
 
-        # Get the AI response
-        ai_response = self.model.get_model().create_chat_completion(
+        ai_response = self.provider.get_completion(
+            response_model=NonCombatFloorIntroResponseModel,
             messages=self.messages,
-            response_format=self.response_format,
-            max_tokens=200,
+            max_tokens=400,
             temperature=0.8,
         )
-
-        # Process and return the response
         return NonCombatFloorIntroResponse.process_response(ai_response)
