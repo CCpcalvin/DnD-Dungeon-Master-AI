@@ -1,11 +1,12 @@
-from dataclasses import dataclass
 from game.classes.LLMModel import LLMModel
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 
 import json, os
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 
-class LLMRequest:
+class LLMRequest(ABC):
     def __init__(self, model: LLMModel):
         self.model = model
         self.messages = [
@@ -34,11 +35,13 @@ class LLMRequest:
         with open(os.path.join(USER_PROMPT_PATH, self.prompt_file), "r") as f:
             self.user_prompt_template = f.read()
     
+    @abstractmethod
     def update_user_prompt(self, **kwargs):
-        raise NotImplementedError
+        pass 
 
+    @abstractmethod
     def send(self):
-        raise NotImplementedError
+        pass
 
     def send_and_save(self, save_path: str, **kwargs):
         ai_response = self.send(**kwargs)
@@ -63,9 +66,10 @@ class LLMResponse:
     message: str
     ai_response: dict
 
+    @abstractmethod
     @classmethod
     def process_response(cls, ai_response: dict):
-        raise NotImplementedError
+        pass
 
     @classmethod
     def load_ai_response(cls, save_path: str) -> str:

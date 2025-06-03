@@ -59,36 +59,31 @@ class ItemUseResolutionRequest(LLMRequest):
         self.player = player
         self.history = history
 
-        self.set_response_format(
-            {
-                "type": "json_object",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "narrative": {
-                            "type": "string",
-                        },
-                        "health_change": {
-                            "type": "integer",
-                            "minimum": -10,
-                            "maximum": 10,
-                        },
-                        "summary": {
-                            "type": "string",
-                        },
-                        "is_item_consumed": {"type": "boolean"},
-                        "is_event_ended": {"type": "boolean"},
+        self.set_response_format({
+            "type": "json_object",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "narrative": {"type": "string"},
+                    "health_change": {
+                        "type": "integer",
+                        "minimum": -10,
+                        "maximum": 10
                     },
-                    "required": [
-                        "narrative",
-                        "health_change",
-                        "summary",
-                        "is_item_consumed",
-                        "is_event_ended",
-                    ],
+                    "summary": {"type": "string"},
+                    "is_item_consumed": {"type": "boolean"},
+                    "is_event_ended": {"type": "boolean"}
                 },
+                "required": [
+                    "narrative",
+                    "health_change",
+                    "summary",
+                    "is_item_consumed",
+                    "is_event_ended"
+                ],
+                "additionalProperties": False
             }
-        )
+        })
 
     def update_user_prompt(
         self,
