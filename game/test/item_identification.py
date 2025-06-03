@@ -2,13 +2,9 @@ import sys
 
 sys.path.append("..")
 
-from game.classes.LLMModel import LLMModel
 from game.classes.ItemClasses import Item, Rarity
 from game.classes.NonCombatFloor import NonCombatFloor
 from game.DungeonMaster import DungeonMaster
-
-from dataclasses import asdict
-import json
 
 # Import the IPython module
 try:
@@ -24,9 +20,9 @@ try:
         raise ImportError("Not running in IPython")
 except (ImportError, ValueError) as e:
     print(f"Warning: {e}. Creating a new model instance.")
-    from game.classes.LLMModel import LLMModel
+    from game.models.LLMProvider import Local_LLAMAProvider
 
-    model = LLMModel()
+    model = Local_LLAMAProvider()
 
 
 def test_item_identification():
