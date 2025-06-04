@@ -2,16 +2,15 @@ from __future__ import annotations
 
 from game.classes.ItemClasses import Item
 from game.classes.EntityClasses import Player
-
 from game.classes.FloorHistory import FloorHistory
+from game.classes.NonCombatFloorType import NonCombatFloorType
+
 from game.models.LLMProvider import LLMProvider
-from game.classes.RollResults import RollResult
-from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
-from game.llm_api.LLMRequest import LLMRequest
+from game.llm_api.LLMRequest import LLMRequest, LLMResponseModel
 from pydantic import BaseModel, Field
 
 
-class ItemUseResolutionResponseModel(BaseModel):
+class ItemUseResolutionResponseModel(LLMResponseModel):
     narrative: str = Field(
         ..., description="A narrative description of the item use resolution"
     )
@@ -48,14 +47,13 @@ class ItemUseResolutionRequest(LLMRequest):
         self.history = history
 
     def update_user_prompt(
-        self,
-        item_to_use: Item,
-        user_input: str,
+        self, item_to_use: Item, user_input: str, floor_type: NonCombatFloorType
     ):
         """Update the user prompt with the current context."""
         self.set_user_prompt(
             self.user_prompt_template.format(
                 theme=self.theme,
+                floor_type=floor_type.value,
                 player_description=self.player.description,
                 history=self.history.history_prompt(),
                 item_to_use=item_to_use.to_prompt(),
@@ -63,15 +61,12 @@ class ItemUseResolutionRequest(LLMRequest):
             )
         )
 
-    def send(
-        self,
-        item_to_use: Item,
-        user_input: str,
-    ):
+    def send(self, item_to_use: Item, user_input: str, floor_type: NonCombatFloorType):
 
         self.update_user_prompt(
             item_to_use=item_to_use,
             user_input=user_input,
+            floor_type=floor_type,
         )
         return self.provider.get_completion(
             ResponseModel=self.ResponseModel,

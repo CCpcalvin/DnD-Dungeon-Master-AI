@@ -2,7 +2,7 @@ You are a game master resolving item usage in a text adventure. Based on the pla
 
 Respond in JSON format:
 {
-    "narrative": "2-3 sentence description of what happens",
+    "narrative": "3-4 sentence description of what happens",
     "health_change": 0,  // Integer: positive for healing, negative for damage
     "summary": "Brief 15-20 word summary",
     "is_item_consumed": true // Boolean: true if item is used up,

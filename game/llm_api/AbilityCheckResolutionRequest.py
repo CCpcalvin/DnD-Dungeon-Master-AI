@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-import json
-import os
-from dataclasses import dataclass
-
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
+from game.classes.NonCombatFloorType import NonCombatFloorType
 from game.models.LLMProvider import LLMProvider
+
 from game.classes.RollResults import RollResult
-from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
-from game.llm_api.LLMRequest import LLMRequest
-from pydantic import BaseModel, Field
+from game.classes.Progression import Progression
+
+from game.llm_api.LLMRequest import LLMRequest, LLMResponseModel
+from pydantic import Field
 
 
-class AbilityCheckResolutionResponseModel(BaseModel):
+class AbilityCheckResolutionResponseModel(LLMResponseModel):
     narrative: str = Field(
         ..., description="A narrative description of the check resolution"
     )
@@ -24,9 +23,6 @@ class AbilityCheckResolutionResponseModel(BaseModel):
         description="The amount of health change from the check (-10 to 10)",
     )
     summary: str = Field(..., description="A brief summary of the outcome")
-    is_event_ended: bool = Field(
-        ..., description="Whether the event is concluded after this check"
-    )
 
 
 class AbilityCheckResolutionRequest(LLMRequest):
@@ -50,19 +46,29 @@ class AbilityCheckResolutionRequest(LLMRequest):
         self,
         player_action: str,
         roll_result: RollResult,
+        progression: Progression,
+        floor_type: NonCombatFloorType,
     ):
         """Update the user prompt with the current context."""
         self.set_user_prompt(
             self.user_prompt_template.format(
                 theme=self.theme,
+                floor_type=floor_type.value,
                 player_description=self.player.description,
                 history=self.history.history_prompt(),
                 player_action=player_action,
                 roll_result=roll_result,
+                progression=progression.to_prompt(),
             )
         )
 
-    def send(self, player_action: str, roll_result: RollResult):
+    def send(
+        self,
+        player_action: str,
+        roll_result: RollResult,
+        progression: Progression,
+        floor_type: NonCombatFloorType,
+    ):
         """
         Send the request to the LLM and return the response.
 
@@ -73,11 +79,16 @@ class AbilityCheckResolutionRequest(LLMRequest):
         Returns:
             AbilityCheckResolutionResponse: The response from the LLM
         """
-        self.update_user_prompt(player_action=player_action, roll_result=roll_result)
+        self.update_user_prompt(
+            player_action=player_action,
+            roll_result=roll_result,
+            progression=progression,
+            floor_type=floor_type,
+        )
 
         return self.provider.get_completion(
             ResponseModel=self.ResponseModel,
             messages=self.messages,
-            max_tokens=100,
-            temperature=0.4,
+            max_tokens=300,
+            temperature=0.8,
         )

@@ -12,9 +12,9 @@ Generate a response in JSON format with these fields:
 }
 
 Guidelines:
-- Match the tone and style to the provided floor type (Treasure or Treasure with Trap)
-- For "Treasure" floors, create a welcoming but mysterious atmosphere
-- For "Treasure with Trap" floors, build tension and hint at potential danger
+- Match the tone and style to the provided floor type
 - Keep the description concise but evocative
 - Make the investigation hook engaging and interactive
 - [Optional] The hook should make the player feel their character's background is relevant to the current situation
+
+

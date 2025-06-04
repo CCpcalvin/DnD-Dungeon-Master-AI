@@ -1,31 +1,27 @@
-from __future__ import annotations
-from game.models.LLMProvider import LLMProvider
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
 
+from game.models.LLMProvider import LLMProvider
 from game.llm_api.LLMRequest import LLMRequest, LLMResponseModel
 
 from pydantic import Field
-from typing import List
+from typing import Literal
 
 
-class SuggestActionResponseModel(LLMResponseModel):
-    suggested_actions: List[str] = Field(
-        ...,
-        min_items=1,
-        max_items=2,
-        description="List of suggested actions for the player (1-2 items)",
+class ClassifyRewardTypeResponseModel(LLMResponseModel):
+    reward_type: Literal["heal", "max_health_increase", "attribute_increase"] = Field(
+        ..., description="The type of reward"
     )
 
 
-class SuggestActionRequest(LLMRequest):
+class ClassifyRewardTypeRequest(LLMRequest):
     @property
     def prompt_file(self):
-        return "suggest_action.txt"
+        return "classify_reward_type.txt"
 
     @property
     def ResponseModel(self):
-        return SuggestActionResponseModel
+        return ClassifyRewardTypeResponseModel
 
     def __init__(
         self, provider: LLMProvider, theme: str, player: Player, history: FloorHistory
@@ -35,10 +31,7 @@ class SuggestActionRequest(LLMRequest):
         self.player = player
         self.history = history
 
-    def update_user_prompt(
-        self,
-        recent_history: str,
-    ):
+    def update_user_prompt(self, recent_history: str):
         """Update the user prompt with the current context."""
         self.set_user_prompt(
             self.user_prompt_template.format(
@@ -49,18 +42,12 @@ class SuggestActionRequest(LLMRequest):
             )
         )
 
-    def send(self, recent_history):
-        """
-        Send the suggest action request to the LLM.
-
-        Returns:
-            SuggestActionResponse: The suggested actions for the player
-        """
+    def send(self, recent_history: str) -> ClassifyRewardTypeResponseModel:
+        """Send the request and return the response."""
         self.update_user_prompt(recent_history)
-
         return self.provider.get_completion(
             ResponseModel=self.ResponseModel,
             messages=self.messages,
-            max_tokens=200,
-            temperature=0.7,
+            max_tokens=50,
+            temperature=0.4,
         )

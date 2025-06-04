@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from game.models.LLMProvider import LLMProvider
-from game.llm_api.LLMRequest import LLMRequest
+from game.llm_api.LLMRequest import LLMRequest, LLMResponseModel
 from game.classes.NonCombatFloorType import NonCombatFloorType
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 from typing import List
 
 
-class NonCombatFloorIntroResponseModel(BaseModel):
+class NonCombatFloorIntroResponseModel(LLMResponseModel):
     description: str = Field(
         ...,
         description="A detailed description of the floor's environment and atmosphere",
@@ -68,3 +68,36 @@ class NonCombatFloorIntroRequest(LLMRequest):
             max_tokens=400,
             temperature=0.8,
         )
+
+
+class TreasureRoomIntroRequest(NonCombatFloorIntroRequest):
+    @property
+    def prompt_file(self):
+        return "treasure_room_intro.txt"
+
+    @classmethod
+    def create_from_non_combat_floor_request(
+        cls, non_combat_floor_request: NonCombatFloorIntroRequest
+    ) -> TreasureRoomIntroRequest:
+        """Create a TreasureRoomIntroRequest from a NonCombatFloorIntroRequest."""
+        return cls(
+            provider=non_combat_floor_request.provider,
+            theme=non_combat_floor_request.theme,
+            player_description=non_combat_floor_request.player_description,
+        )
+
+
+class TreasureRoomWithTrapIntroRequest(TreasureRoomIntroRequest):
+    @property
+    def prompt_file(self):
+        return "treasure_room_with_trap_intro.txt"
+
+class HiddenTrapRoomIntroRequest(TreasureRoomIntroRequest):
+    @property
+    def prompt_file(self):
+        return "hidden_trap_room_intro.txt"
+
+class NPCEncounterRoomIntroRequest(TreasureRoomIntroRequest):
+    @property
+    def prompt_file(self):
+        return "npc_encounter_room_intro.txt"

@@ -1,5 +1,8 @@
 import enum
 
+
 class NonCombatFloorType(str, enum.Enum):
-    REWARD = "Reward"
-    REWARD_WITH_TRAP = "Reward with Trap"
+    TREASURE = "Treasure"
+    TREASURE_WITH_TRAP = "Treasure with Trap"
+    HIDDEN_TRAP = "Hidden Trap"
+    NPC_ENCOUNTER = "NPC Encounter"

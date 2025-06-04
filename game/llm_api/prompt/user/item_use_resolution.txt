@@ -1,4 +1,5 @@
 Game Theme: {theme}
+Floor Type: {floor_type}
 Player Description: {player_description}
 
 Game History:

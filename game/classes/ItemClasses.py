@@ -49,4 +49,3 @@ class Item:
     def __json__(self) -> dict:
         """Make the class JSON-serializable."""
         return self.to_dict()
-

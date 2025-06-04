@@ -1,0 +1,6 @@
+History: {history}
+Recent History: {recent_history}
+Game Theme: {theme}
+Player Description: {player_description}
+
+Please give the appropriate reward type based above information.

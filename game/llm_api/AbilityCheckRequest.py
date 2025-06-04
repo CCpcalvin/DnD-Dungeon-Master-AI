@@ -1,14 +1,13 @@
 from __future__ import annotations
 from game.classes.EntityClasses import Player
 from game.models.LLMProvider import LLMProvider
-from game.llm_api.LLMRequest import LLMRequest
+from game.llm_api.LLMRequest import LLMRequest, LLMResponseModel
 
 from typing import Literal
-from pydantic import BaseModel, Field
-from dataclasses import dataclass
+from pydantic import Field
 
 
-class AbilityCheckResponseModel(BaseModel):
+class AbilityCheckResponseModel(LLMResponseModel):
     attribute: Literal[
         "strength", "dexterity", "intelligence", "wisdom", "charisma"
     ] = Field(

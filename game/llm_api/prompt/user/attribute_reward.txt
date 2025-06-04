@@ -1,0 +1,6 @@
+History: {history}
+Recent History: {recent_history}
+Game Theme: {theme}
+Player Description: {player_description}
+
+Please select the most appropriate attribute to improve after the player completes this task.

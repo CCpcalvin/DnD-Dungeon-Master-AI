@@ -1,0 +1,14 @@
+Generate a vivid and immersive floor description, along with an engaging investigation hook, using the following details:
+
+Game Theme: {theme}
+Player Description: {player_description}
+Floor Type: {floor_type}
+
+In this room, the player should encounter intriguing treasures, but there is also a dangerous hidden trap that may be triggered if the player is not careful. Be creative and descriptive. Possible examples include, but are not limited to:
+
+- A locked chest that is actually a mimic in disguise
+- A glowing item that tempts the player to pick it up, but doing so activates a hidden trap
+- Sparkling objects scattered on the floor, with concealed pressure plates nearby
+- Any combination of the above, or other unique and imaginative traps
+
+Do not directly reveal the presence of traps. Instead, subtly hint at danger through environmental details or suspicious clues. End with a hook that encourages the player to investigate further, while maintaining a sense of mystery and caution.

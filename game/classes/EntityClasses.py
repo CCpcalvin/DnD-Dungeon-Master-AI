@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict
-from game.classes.ItemClasses import Item, Weapon
+from game.classes.ItemClasses import Item
 
 import random, json
 
@@ -20,6 +20,7 @@ class Entity:
 @dataclass
 class Player(Entity):
     name: str
+
     #!: TODO: Later handle combat
     # weapon: Weapon
     inventory: list[Item]
@@ -95,11 +96,31 @@ class Player(Entity):
 
         return str(to_print)
 
+    def num_of_items(self) -> int:
+        return len(self.inventory)
+
     def get_attribute(self, attribute: str) -> int:
         return getattr(self, attribute)
 
     def update_health(self, health_change: int):
         self.current_health += health_change
+
+    def update_attribute(self, attribute: str, value: int):
+        if hasattr(self, attribute):
+            current_value = getattr(self, attribute)
+            new_value = current_value + value
+
+            # Ensure the new value is within the defined limits
+            if self.min_per_attr <= new_value <= self.max_per_attr:
+                setattr(self, attribute, new_value)
+
+            else:
+                print(
+                    f"Cannot update {attribute} to {new_value}. It must be between {self.min_per_attr} and {self.max_per_attr}."
+                )
+
+        else:
+            raise AttributeError(f"{attribute} is not a valid attribute of Player")
 
 
 @dataclass

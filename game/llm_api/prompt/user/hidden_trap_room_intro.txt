@@ -1,0 +1,15 @@
+Generate a vivid and immersive floor description and an engaging investigation hook with these details:
+
+Game Theme: {theme}
+Player Description: {player_description}
+Floor Type: {floor_type}
+
+In this room, there are hidden traps waiting for the player to discover or avoid. Examples of traps include:
+- Concealed pressure plates that trigger darts or pitfalls
+- Invisible tripwires connected to alarms or snares
+- Magical glyphs that activate when stepped on
+- Traps disguised as ordinary objects or features of the room
+- Any combination of the above
+- Any clever or unexpected trap that challenges the player's perception
+
+Do not directly reveal the presence of traps. Instead, use subtle environmental clues and a mysterious hook to encourage the player to investigate carefully.

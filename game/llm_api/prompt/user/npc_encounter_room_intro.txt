@@ -1,0 +1,15 @@
+Generate a vivid and immersive floor description and an engaging investigation hook with these details:
+
+Game Theme: {theme}
+Player Description: {player_description}
+Floor Type: {floor_type}
+
+In this room, the player encounters one or more NPCs (non-player characters) who may offer interaction, information, or challenges. Examples of NPC encounters include:
+- A mysterious merchant offering rare goods or secrets
+- A lost adventurer seeking help or sharing a warning
+- A guardian or sentry who questions the player's intentions
+- A magical being with a riddle or quest
+- Any combination of the above
+- Any unique or memorable character that adds depth to the story
+
+Describe the NPC(s) and their initial attitude or actions. End with a hook that encourages the player to interact or investigate further.

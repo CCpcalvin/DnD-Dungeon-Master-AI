@@ -1,4 +1,5 @@
 Game Theme: {theme}
+Floor Type: {floor_type}
 Player Description: {player_description}
 
 Game History:
@@ -6,5 +7,6 @@ Game History:
 
 Player Action: {player_action}
 Roll Result: {roll_result}
+Progression: {progression}
 
 Please continue the story based on the above information.
