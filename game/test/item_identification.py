@@ -20,9 +20,9 @@ try:
         raise ImportError("Not running in IPython")
 except (ImportError, ValueError) as e:
     print(f"Warning: {e}. Creating a new model instance.")
-    from game.models.LLMProvider import Local_LLAMAProvider
+    from game.models.LLMProvider import ollama
 
-    model = Local_LLAMAProvider()
+    model = ollama()
 
 
 def test_item_identification():

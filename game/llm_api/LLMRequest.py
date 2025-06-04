@@ -1,3 +1,4 @@
+from __future__ import annotations
 from game.models.LLMProvider import LLMProvider
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 
@@ -5,8 +6,25 @@ import json, os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from pydantic import BaseModel
+from typing import TypeVar, Any, Optional
+
+T = TypeVar("T", bound="LLMResponseModel")
+
 
 class LLMRequest(ABC):
+    @property
+    @abstractmethod
+    def prompt_file(self) -> str:
+        """The filename of the prompt template to use."""
+        pass
+
+    @property
+    @abstractmethod
+    def ResponseModel(self) -> type[LLMResponseModel]:
+        """The response model class for this request."""
+        pass
+
     def __init__(self, provider: LLMProvider):
         self.provider = provider
         self.messages = [
@@ -30,55 +48,72 @@ class LLMRequest(ABC):
     def load_system_prompt(self):
         with open(os.path.join(SYSTEM_PROMPT_PATH, self.prompt_file), "r") as f:
             self.set_system_prompt(f.read())
-    
+
     def load_user_prompt_template(self):
         with open(os.path.join(USER_PROMPT_PATH, self.prompt_file), "r") as f:
             self.user_prompt_template = f.read()
-    
+
     @abstractmethod
     def update_user_prompt(self, **kwargs):
-        pass 
-
-    @abstractmethod
-    def send(self):
         pass
 
-    def send_and_save(self, save_path: str, **kwargs):
-        ai_response = self.send(**kwargs)
+    @abstractmethod
+    def send(self) -> LLMResponseModel:
+        pass
 
-        to_save = {
-            "input": kwargs,
-            "messages": self.messages,
-            "ai_response": ai_response.ai_response,
-        }
-        # Create directory if it doesn't exist
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    def send_and_save(self, save_path: str, **kwargs) -> Any:
+        """Send the request and save the response to a file."""
+        response = self.send(**kwargs)
 
         with open(save_path, "w") as f:
-            json.dump(to_save, f)
+            f.write(response.model_dump_json())
 
-        return ai_response
+        return response
+
+    def check_mock_exists(self, current_mock_dir: str, file_name: str) -> bool:
+        """
+        Check if the mock file exists.
+        """
+        file_path = os.path.join(current_mock_dir, file_name)
+        return os.path.exists(file_path)
+
+    def send_and_save_to_mock(
+        self, mocks_dir: str, save_file_name: str, mock: Optional[int], **kwargs
+    ):
+        """
+        Load the response from a mock file if mock is set, otherwise
+        Send the request and save the response to a file in the mock directory.
+        For testing purposes only.
+
+        Args:
+            mock_dir_path: The directory path to save the mock file.
+            save_file_name: The name of the file to save the response as.
+            mock: If set, load the response from a mock file.
+
+        Returns:
+            The response object from self.send().
+        """
+        if mock is not None:
+            current_mock_dir = os.path.join(mocks_dir, f"{mock}")
+            if self.check_mock_exists(current_mock_dir, save_file_name):
+                # Load the mock response from a file
+                response = self.ResponseModel.load(
+                    os.path.join(current_mock_dir, save_file_name)
+                )
+            else:
+                response = self.send_and_save(
+                    save_path=os.path.join(current_mock_dir, save_file_name), **kwargs
+                )
+
+        else:
+            response = self.send(**kwargs)
+
+        return response
 
 
-@dataclass
-class LLMResponse:
-    success: bool
-    message: str
-    ai_response: dict
-
-    @classmethod
-    @abstractmethod
-    def process_response(cls, ai_response: dict):
-        pass
-
-    @classmethod
-    def load_ai_response(cls, save_path: str) -> str:
-        with open(save_path, "r") as f:
-            raw_ai_response = json.load(f)
-
-        return raw_ai_response["ai_response"]
-
+class LLMResponseModel(BaseModel):
     @classmethod
     def load(cls, save_path: str):
-        ai_response = cls.load_ai_response(save_path)
-        return cls.process_response(ai_response)
+        """Load the response from a file."""
+        with open(save_path, "r") as f:
+            return cls.model_validate_json(f.read())

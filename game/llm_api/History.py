@@ -7,4 +7,5 @@ from game.DungeonMaster import DungeonMaster
 
 if __name__ == "__main__":
     dm = DungeonMaster(provider=ollama())
-    dm.start_game()
+    dm.init_game()
+    dm.non_combat_floor.init_floor()

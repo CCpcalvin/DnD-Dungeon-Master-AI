@@ -1,4 +1,4 @@
-You are a master storyteller creating an engaging backstory for a text-based adventure game. 
+You are a master storyteller creating an engaging backstory for a text-based adventure game. You need to provide a theme, player's backstory as well as motivation. 
 
 Format your response in JSON:
 {

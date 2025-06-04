@@ -20,7 +20,8 @@ class Entity:
 @dataclass
 class Player(Entity):
     name: str
-    weapon: Weapon
+    #!: TODO: Later handle combat
+    # weapon: Weapon
     inventory: list[Item]
 
     min_per_attr: int = 1  # Ensure no stat is zero
@@ -29,9 +30,7 @@ class Player(Entity):
     start_health: int = 10
 
     @classmethod
-    def create_start_player_with_random_stats(
-        cls, name: str, weapon: Weapon, description: str
-    ):
+    def create_start_player_with_random_stats(cls, name: str, description: str):
         """
         Create a new Player with randomized stats that sum to 35,
         with each stat having a maximum of 9.
@@ -63,7 +62,7 @@ class Player(Entity):
         # Create and return the player
         return cls(
             name=name,
-            weapon=weapon,
+            # weapon=weapon,
             description=description,
             inventory=[],
             strength=stats["strength"],
@@ -84,8 +83,8 @@ class Player(Entity):
         for item in self.inventory:
             to_print.append(item.name)
 
-        return str(to_print) 
-    
+        return str(to_print)
+
     def inventory_full_prompt(self) -> str:
         if len(self.inventory) == 0:
             return "No items in inventory"
@@ -95,10 +94,10 @@ class Player(Entity):
             to_print.append(json.dumps(asdict(item)))
 
         return str(to_print)
-    
+
     def get_attribute(self, attribute: str) -> int:
         return getattr(self, attribute)
-    
+
     def update_health(self, health_change: int):
         self.current_health += health_change
 

@@ -3,7 +3,7 @@ Generate a compelling theme and reason for the player's presence in the tower.
 1. Theme:
 - Create a dark fantasy or gothic horror atmosphere
 - The tower should feel ancient and mysterious
-- Include elements of magic and danger
+- Include elements of danger
 
 2. Player's Motivation:
 - Why is the player drawn to the tower?

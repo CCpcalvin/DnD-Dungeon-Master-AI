@@ -24,7 +24,7 @@ services:
     depends_on:
       - ollama
     volumes:
-      - .:/app
+      - .:/home/backend/app
     tty: true
     stdin_open: true
     command: /bin/bash

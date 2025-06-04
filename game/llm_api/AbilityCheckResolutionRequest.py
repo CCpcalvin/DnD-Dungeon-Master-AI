@@ -9,7 +9,7 @@ from game.classes.FloorHistory import FloorHistory
 from game.models.LLMProvider import LLMProvider
 from game.classes.RollResults import RollResult
 from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
-from game.llm_api.LLMRequest import LLMRequest, LLMResponse
+from game.llm_api.LLMRequest import LLMRequest
 from pydantic import BaseModel, Field
 
 
@@ -29,42 +29,14 @@ class AbilityCheckResolutionResponseModel(BaseModel):
     )
 
 
-@dataclass
-class AbilityCheckResolutionResponse(LLMResponse):
-    @classmethod
-    def process_response(cls, ai_response: dict) -> AbilityCheckResolutionResponse:
-        try:
-            data = json.loads(ai_response["choices"][0]["message"]["content"])
-            return AbilityCheckResolutionResponseSuccess(
-                success=True,
-                message="",
-                ai_response=ai_response,
-                narrative=data["narrative"],
-                health_change=data["health_change"],
-                summary=data["summary"],
-                is_event_ended=data["is_event_ended"],
-            )
-        except Exception as e:
-            return AbilityCheckResolutionResponseError(
-                success=False, message=str(e), ai_response=ai_response
-            )
-
-
-@dataclass
-class AbilityCheckResolutionResponseSuccess(AbilityCheckResolutionResponse):
-    narrative: str
-    health_change: int
-    summary: str
-    is_event_ended: bool
-
-
-@dataclass
-class AbilityCheckResolutionResponseError(AbilityCheckResolutionResponse):
-    pass
-
-
 class AbilityCheckResolutionRequest(LLMRequest):
-    prompt_file = "ability_check_resolution.txt"
+    @property
+    def prompt_file(self):
+        return "ability_check_resolution.txt"
+
+    @property
+    def ResponseModel(self):
+        return AbilityCheckResolutionResponseModel
 
     def __init__(
         self, provider: LLMProvider, theme: str, player: Player, history: FloorHistory
@@ -73,35 +45,6 @@ class AbilityCheckResolutionRequest(LLMRequest):
         self.theme = theme
         self.player = player
         self.history = history
-
-        self.set_response_format(
-            {
-                "type": "json_object",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "narrative": {
-                            "type": "string",
-                        },
-                        "health_change": {
-                            "type": "integer",
-                            "minimum": -10,
-                            "maximum": 10,
-                        },
-                        "summary": {
-                            "type": "string",
-                        },
-                        "is_event_ended": {"type": "boolean"},
-                    },
-                    "required": [
-                        "narrative",
-                        "health_change",
-                        "summary",
-                        "is_event_ended",
-                    ],
-                },
-            }
-        )
 
     def update_user_prompt(
         self,
@@ -119,25 +62,22 @@ class AbilityCheckResolutionRequest(LLMRequest):
             )
         )
 
-    def send(
-        self, player_roll: int, difficulty_class: int
-    ) -> AbilityCheckResolutionResponse:
+    def send(self, player_action: str, roll_result: RollResult):
         """
         Send the request to the LLM and return the response.
 
         Args:
-            player_roll: The player's roll result (1-20)
-            difficulty_class: The difficulty class of the check
+            player_action (str): The player's action description
+            roll_result (RollResult): The result of the ability check roll
 
         Returns:
             AbilityCheckResolutionResponse: The response from the LLM
         """
-        self.update_user_prompt(player_roll, difficulty_class)
+        self.update_user_prompt(player_action=player_action, roll_result=roll_result)
 
-        ai_response = self.provider.get_completion(
-            response_model=AbilityCheckResolutionResponseModel,
+        return self.provider.get_completion(
+            ResponseModel=self.ResponseModel,
             messages=self.messages,
             max_tokens=100,
             temperature=0.4,
         )
-        return AbilityCheckResolutionResponse.process_response(ai_response)

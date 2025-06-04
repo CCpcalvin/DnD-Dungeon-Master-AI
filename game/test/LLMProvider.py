@@ -2,10 +2,11 @@ import sys
 
 sys.path.append("..")
 
-from game.models.LLMProvider import *
+from typing import Literal
 
 from pydantic import BaseModel, Field
-from typing import Literal
+
+from game.models.LLMProvider import *
 
 # Import the IPython module
 try:
@@ -35,10 +36,10 @@ class People(BaseModel):
 
 
 def test_local_llama():
-    model = Local_LLAMAProvider(local_llm)
+    model = ollama(local_llm)
 
     completion = model.get_completion(
-        response_model=People,
+        ResponseModel=People,
         messages=[
             {
                 "role": "user",
@@ -68,7 +69,7 @@ def test_open_router_mistral():
     ]
 
     completion = model.get_completion(
-        response_model=People, messages=messages, max_tokens=100, temperature=0.8
+        ResponseModel=People, messages=messages, max_tokens=100, temperature=0.8
     )
     print(completion)
 
@@ -77,7 +78,7 @@ def test_open_router_llama():
     model = Llama_3_3_8B_Instruct()
 
     completion = model.get_completion(
-        response_model=People,
+        ResponseModel=People,
         messages=[
             {
                 "role": "user",

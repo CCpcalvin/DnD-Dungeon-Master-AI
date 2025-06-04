@@ -1,5 +1,5 @@
-import random
-from typing import Union
+import os, random
+from typing import Union, Optional
 
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
@@ -9,39 +9,33 @@ from game.classes.RollResults import RollResult
 
 from game.llm_api.NonCombatFloorIntroRequest import (
     NonCombatFloorIntroRequest,
-    NonCombatFloorIntroResponse,
-    NonCombatFloorIntroResponseSuccess,
-    NonCombatFloorIntroResponseError,
+    NonCombatFloorIntroResponseModel,
 )
 
 from game.llm_api.ClassifyNonCombatActionRequest import (
     ClassifyNonCombatActionRequest,
-    ClassifyNonCombatActionResponse,
-    ClassifyNonCombatActionResponseError,
-    ClassifyNonCombatActionResponseSuccess,
+    ClassifyNonCombatActionResponseModel,
 )
 
 from game.llm_api.AbilityCheckRequest import AbilityCheckRequest
 
 from game.llm_api.AbilityCheckResolutionRequest import (
     AbilityCheckResolutionRequest,
-    AbilityCheckResolutionResponse,
-    AbilityCheckResolutionResponseError,
-    AbilityCheckResolutionResponseSuccess,
+    AbilityCheckResolutionResponseModel,
 )
 
-from game.llm_api.ItemIdentificationRequest import ItemIdentificationRequest
 from game.llm_api.ItemUseResolutionRequest import (
     ItemUseResolutionRequest,
-    ItemUseResolutionResponse,
-    ItemUseResolutionResponseError,
-    ItemUseResolutionResponseSuccess,
+    ItemUseResolutionResponseModel,
 )
 
 from game.llm_api.SuggestActionRequest import SuggestActionRequest
+from game.Const import GAME_PATH
 
 
 class NonCombatFloor:
+    mocks_dir = os.path.join(GAME_PATH, "test", "mock")
+
     def __init__(self, theme: str, player: Player, provider: LLMProvider):
         self.theme = theme
         self.player = player
@@ -77,10 +71,6 @@ class NonCombatFloor:
             player,
             self.history,
         )
-        self.item_identification_request = ItemIdentificationRequest(
-            provider,
-            player,
-        )  # ? We didn't use that anymore
         self.item_use_resolution_request = ItemUseResolutionRequest(
             provider,
             theme,
@@ -89,9 +79,22 @@ class NonCombatFloor:
         )
 
     def reload(self):
-        return NonCombatFloor(self.theme, self.player, self.model)
+        return NonCombatFloor(self.theme, self.player, self.provider)
 
-    def init_floor(self, mock: bool = False):
+    def init_mock(self, mock: int):
+        """
+        Save the response to a file, such that we do not need to regenerate it.
+        It is for testing purpose.
+        """
+        self.current_mock_dir = os.path.join(self.mocks_dir, f"{mock}")
+
+        if not os.path.exists(self.current_mock_dir):
+            os.makedirs(self.current_mock_dir)
+
+    def init_floor(self, mock: Optional[int] = None):
+        if mock is not None:
+            self.init_mock(mock)
+
         # Init the data
         self.end = False
 
@@ -101,18 +104,14 @@ class NonCombatFloor:
         print("(System): Generating floor description...")
         #! TODO: Error handling
         # Get the floor description and investigation hook
-        if mock:
-            intro_response = NonCombatFloorIntroResponse.load(
-                "./test/mock/non_combat_floor_intro_response.json"
+        intro_response: NonCombatFloorIntroResponseModel = (
+            self.intro_request.send_and_save_to_mock(
+                mocks_dir=self.mocks_dir,
+                save_file_name="non_combat_floor_intro_response.json",
+                mock=mock,
+                floor_type=self.floor_type,
             )
-        else:
-            intro_response = self.intro_request.send(self.floor_type)
-            if isinstance(intro_response, NonCombatFloorIntroResponseError):
-                print(
-                    "(System): Error on generating floor description. Please try again."
-                )
-                print("Error: ", intro_response.message)
-                return
+        )
 
         # Set the description
         self.description = intro_response.description
@@ -130,34 +129,30 @@ class NonCombatFloor:
 
     def handle_user_input(self, user_input: str):
         print("(System): Classifying your action...")
+
+        #! TODO: Error handling
         classify_action_response = self.classify_action_request.send(user_input)
 
-        if isinstance(classify_action_response, ClassifyNonCombatActionResponseSuccess):
-            if classify_action_response.action_type == "ability_check":
-                self.handle_ability_check(user_input)
-            elif classify_action_response.action_type == "use_item":
-                self.handle_use_item()
-            elif classify_action_response.action_type == "go_to_next_floor":
-                self.go_to_next_floor()
-
-        elif isinstance(
-            classify_action_response,
-            ClassifyNonCombatActionResponseNarrativeConsistencyError,
-        ):
+        if classify_action_response.narrative_consistency is False:
             print(
                 "(System): Your action is not consistent with the narrative. Please re-input your action"
             )
-        elif isinstance(
-            classify_action_response,
-            ClassifyNonCombatActionResponseUnknownError,
-        ):
+            return
+
+        if classify_action_response.action_type == "unknown":
             print(
-                "(System): We cannot classify your action. Please re-input your action"
+                "(System): System cannot classify your action. Please re-input your action"
             )
-        elif isinstance(classify_action_response, ClassifyNonCombatActionResponseError):
-            print(
-                "(System): Error on classifying your action. Please re-input your action"
-            )
+            return
+
+        if classify_action_response.action_type == "ability_check":
+            self.handle_ability_check(user_input)
+
+        elif classify_action_response.action_type == "use_item":
+            self.handle_use_item()
+
+        elif classify_action_response.action_type == "go_to_next_floor":
+            self.go_to_next_floor()
 
     def handle_ability_check(self, user_input: str):
         #! TODO: Error handling
@@ -171,12 +166,15 @@ class NonCombatFloor:
         if roll == 10:
             # Critical Success
             roll_result = RollResult.CRITICAL_SUCCESS
+
         elif roll == 1:
             # Critical Failure
             roll_result = RollResult.CRITICAL_FAILURE
+
         else:
             if score >= ability_check_response.difficulty_class:
                 roll_result = RollResult.SUCCESS
+
             else:
                 roll_result = RollResult.FAILURE
 
@@ -203,7 +201,7 @@ class NonCombatFloor:
         # Add to the history
         self.history.add_player_actions(user_input, roll_result)
 
-        self.handle_resolution(story_extend_response)
+        return self.handle_resolution(story_extend_response)
 
     def handle_use_item(self):
         item_index = int(
@@ -211,24 +209,26 @@ class NonCombatFloor:
         )
         user_input = input("(System): How do you use the item?")
 
-        self.use_item_resolution(item_index, user_input)
+        return self.use_item_resolution(item_index, user_input)
 
     def use_item_resolution(self, item_index: int, user_input: str):
         print("(System): Resolving item usage...")
         #! TODO: Error handling
         item_use_resolution_response = self.item_use_resolution_request.send(
-            user_input=user_input,
             item_to_use=self.player.inventory[item_index],
+            user_input=user_input,
         )
 
         if item_use_resolution_response.is_item_consumed:
             self.player.inventory.pop(item_index)
 
-        self.handle_resolution(item_use_resolution_response)
+        return self.handle_resolution(item_use_resolution_response)
 
     def handle_resolution(
         self,
-        response: Union[ItemUseResolutionResponse, AbilityCheckResolutionResponse],
+        response: Union[
+            ItemUseResolutionResponseModel, AbilityCheckResolutionResponseModel
+        ],
     ):
         # Print the story
         print(response.narrative)
@@ -257,6 +257,7 @@ class NonCombatFloor:
                 print(f"{i + 1}. {action}")
 
             print(f"{i + 2}. Write your own action.")
+            return
 
     def go_to_next_floor(self):
         #! TODO: Think about what information need to be sent back to DM
