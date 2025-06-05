@@ -109,13 +109,8 @@ class Player(Entity):
             if self.current_health > self.max_health:
                 self.current_health = self.max_health
 
-            print(
-                f"(System): Health change: {health_change}. Current health: {self.current_health}"
-            )
-
-            if self.current_health <= 0:
-                print(f"(System): {self.name} has died.")
-                #! TODO: Handle player death properly
+            print(f"(System): Health change: {health_change}. Current health: {self.current_health}/{self.max_health}")
+        
 
     def update_attribute(self, attribute: str, value: int):
         if hasattr(self, attribute):

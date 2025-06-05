@@ -1,7 +1,6 @@
 FROM node:24-slim
 
-# Set working directory
 WORKDIR /home/frontend/app
 
-RUN mkdir -p /home/frontend/app
+
 

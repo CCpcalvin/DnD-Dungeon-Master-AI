@@ -4,17 +4,17 @@ from game.classes.EntityClasses import Player
 from game.models.LLMProvider import LLMProvider
 from game.llm_api.LLMRequest import LLMRequest, LLMResponseModel
 from game.classes.FloorHistory import FloorHistory
-from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 from typing import Literal
 
 
+#! TODO: Later do the item handling
 class ClassifyNonCombatActionResponseModel(LLMResponseModel):
-    action_type: Literal["ability_check", "use_item", "skip_this_floor", "unknown"] = (
+    action_type: Literal["ability_check", "skip_floor", "unknown"] = (
         Field(
             ...,
-            description="The type of action: 'ability_check', 'use_item', 'skip_this_floor', or 'unknown'",
+            description="The type of action: 'ability_check', 'skip_floor', or 'unknown'",
         )
     )
     narrative_consistency: bool = Field(
@@ -43,20 +43,19 @@ class ClassifyNonCombatActionRequest(LLMRequest):
         self.player = player
         self.history = history
 
-    def update_user_prompt(self, user_input: str, suggested_actions: list[str]):
+    def update_user_prompt(self, user_input: str):
         self.set_user_prompt(
             self.user_prompt_template.format(
                 theme=self.theme,
                 player_description=self.player.description,
                 player_inventory=self.player.inventory_prompt(),
                 history=self.history.history_prompt(),
-                suggested_actions=str(suggested_actions),
                 user_input=user_input,
             )
         )
 
-    def send(self, user_input: str, suggested_actions: list[str]):
-        self.update_user_prompt(user_input, suggested_actions)
+    def send(self, user_input: str):
+        self.update_user_prompt(user_input)
         return self.provider.get_completion(
             ResponseModel=self.ResponseModel,
             messages=self.messages,

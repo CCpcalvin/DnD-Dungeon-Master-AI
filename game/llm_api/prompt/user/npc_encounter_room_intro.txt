@@ -1,4 +1,4 @@
-Generate a vivid and immersive floor description and an engaging investigation hook using the following details:
+Generate a vivid and immersive floor description and an engaging investigation hook with these details:
 
 Game Theme: {theme}
 Player Description: {player_description}
@@ -12,5 +12,4 @@ In this room, the player encounters one or more NPCs (non-player characters) who
 - Any combination of the above
 - Any unique or memorable character that adds depth to the story
 
-Briefly describe the NPC(s) and their initial attitude or actions in 1-2 sentences within the room description. Avoid repeatedly using tropes like "hooded figure". Be creative and vary the NPCs' appearance, mannerisms, and roles. End with a hook that encourages the player to interact or investigate further.
-
+Describe the NPC(s) using vivid, specific language and sensory details. Clearly convey their initial attitude, actions, and appearance. Avoid repeating words such as "figure" or using generic or clichéd descriptions. Vary your phrasing and ensure each NPC feels distinct and memorable. End with a compelling hook that encourages the player to interact or investigate further.

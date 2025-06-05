@@ -160,7 +160,8 @@ class NonCombatFloor:
         else:
             self.floor_type = floor_type
 
-        print("(System): Room type: ", self.floor_type.value)
+        print("Floor type: ", self.floor_type.value)
+
         print("(System): Generating floor description...")
         #! TODO: Error handling
         # Get the floor description and investigation hook
@@ -201,32 +202,33 @@ class NonCombatFloor:
         print("What do you want to do?")
         for i, action in enumerate(intro_response.suggested_actions):
             print(f"{i + 1}. {action}")
-
         print(f"{i + 2}. Go to the next floor.")
         print(f"{i + 3}. Write your own action.")
 
         return intro_response.suggested_actions
 
-    #! TODO: Item usage handling
     def handle_user_input(self, user_input: str, suggested_actions: list[str]):
         print("(System): Classifying your action...")
 
-        # Do a simple string check first 
+        # Do a simple string check
         if len(user_input.strip()) < 10:
             print(
-                "(System): Your input is too short. Please re-input your action."
+                "(System): Your action is too short. Please re-input your action with more details."
             )
             return
 
+        formatted_user_input = user_input.lower().strip()
         for action in suggested_actions:
-            if user_input.strip().lower() in action.lower():
+            # If the user input is a part of the suggested action, handle it as an ability check
+            if formatted_user_input in action.lower().strip():
                 return self.handle_ability_check(user_input)
-        
-        if user_input.strip().lower() in "Go to the next floor.".lower():
-            return self.skip_this_floor(user_input)
+
+        # If the user input is "go to the next floor", skip the floor
+        if formatted_user_input in "Go to the next floor.".lower().strip():
+            return self.skip_floor(user_input)
 
         #! TODO: Error handling
-        classify_action_response = self.classify_action_request.send(user_input, suggested_actions)
+        classify_action_response = self.classify_action_request.send(user_input)
 
         if classify_action_response.narrative_consistency is False:
             print(
@@ -243,16 +245,14 @@ class NonCombatFloor:
         if classify_action_response.action_type == "ability_check":
             self.handle_ability_check(user_input)
 
-        #! TODO: Item usage handling
-        # elif classify_action_response.action_type == "use_item":
-        #     self.handle_use_item()
+        #! TODO: Not yet implemented
+        elif classify_action_response.action_type == "use_item":
+            self.handle_use_item()
 
-        elif classify_action_response.action_type == "skip_this_floor":
-            self.skip_this_floor(user_input)
+        elif classify_action_response.action_type == "go_to_next_floor":
+            self.skip_floor(user_input)
 
-    def handle_ability_check(
-        self, user_input: str, by_pass_roll_result: Optional[RollResult] = None
-    ):
+    def handle_ability_roll(self, user_input: str):
         #! TODO: Error handling
         ability_check_response = self.ability_check_request.send(user_input)
 
@@ -261,29 +261,35 @@ class NonCombatFloor:
         score = roll + self.player.get_attribute(ability_check_response.attribute)
 
         # Calculate the roll result
-        if by_pass_roll_result is None:
-            if roll == 10:
-                # Critical Success
-                roll_result = RollResult.CRITICAL_SUCCESS
+        if roll == 10:
+            # Critical Success
+            roll_result = RollResult.CRITICAL_SUCCESS
 
-            elif roll == 1:
-                # Critical Failure
-                roll_result = RollResult.CRITICAL_FAILURE
+        elif roll == 1:
+            # Critical Failure
+            roll_result = RollResult.CRITICAL_FAILURE
+
+        else:
+            if score >= ability_check_response.difficulty_class:
+                roll_result = RollResult.SUCCESS
 
             else:
-                if score >= ability_check_response.difficulty_class:
-                    roll_result = RollResult.SUCCESS
-
-                else:
-                    roll_result = RollResult.FAILURE
-        else:
-            # Use the passed roll result
-            roll_result = by_pass_roll_result
+                roll_result = RollResult.FAILURE
 
         # Print it out for player
         print(
             f"(System): Score: {score} = {roll} (Roll) + {self.player.get_attribute(ability_check_response.attribute)} ({ability_check_response.attribute}). The DC is {ability_check_response.difficulty_class}. It is {roll_result.value}."
         )
+
+        return roll_result
+
+    def handle_ability_check(
+        self, user_input: str, by_pass_roll_result: Optional[RollResult] = None
+    ):
+        if by_pass_roll_result is None:
+            roll_result = self.handle_ability_roll(user_input)
+        else:
+            roll_result = by_pass_roll_result
 
         if (
             roll_result == RollResult.CRITICAL_FAILURE
@@ -308,6 +314,14 @@ class NonCombatFloor:
             progression=self.progression,
             floor_type=self.floor_type,
         )
+
+        # Update the player's health
+        #! TODO: Check player health! If it goes below 0, it will be game over
+        self.player.update_health(story_extend_response.health_change)
+        if self.player.current_health <= 0:
+            print("(System): You are defeated.")
+            self.end = True
+            return
 
         # Add to the history
         self.history.add_player_actions(user_input, roll_result)
@@ -377,14 +391,10 @@ class NonCombatFloor:
         # Add the user input and story extension to the history
         self.history.add_narrative(response.summary)
 
-        # Update the player's health
-        self.player.update_health(response.health_change)
-
         # Check if the event is ended
         #! TODO:
         if self.progression.is_failed():
             print("(System): The event is ended with failure.")
-            self.end = True
             return self.go_to_next_floor()
 
         elif self.progression.is_completed():
@@ -399,7 +409,6 @@ class NonCombatFloor:
                 classify_reward_type_respond.reward_type,
                 recent_history=response.narrative,
             )
-            self.end = True
             return self.go_to_next_floor()
 
         else:
@@ -418,20 +427,25 @@ class NonCombatFloor:
             print(f"{i + 2}. Write your own action.")
             return suggest_action_response.suggested_actions
 
-    def skip_this_floor(self, user_input: str):
-        if self.end:
-            self.go_to_next_floor()
-
-        else:
+    def skip_floor(self, user_input: str):
+        if not self.end:
             if (
-                self.floor_type == NonCombatFloorType.NPC_ENCOUNTER
-                or self.floor_type == NonCombatFloorType.HIDDEN_TRAP
+                self.floor_type == NonCombatFloorType.HIDDEN_TRAP
+                or self.floor_type == NonCombatFloorType.NPC_ENCOUNTER
             ):
-                self.handle_ability_check(user_input)
+                # Check if the user can skip the floor
+                roll_result = self.handle_ability_roll(user_input)
 
-            else:
-                self.end = True
-                print("Going to the next floor...")
-    
+                if (
+                    roll_result == RollResult.CRITICAL_FAILURE
+                    or roll_result == RollResult.FAILURE
+                ):
+                    # If player fails to skip the floor, go back to the ability check
+                    return self.handle_ability_check(user_input, roll_result)
+
+        return self.go_to_next_floor()
+
     def go_to_next_floor(self):
-        print("(System): Going to the next floor...")
+        #! TODO: Think about what information need to be sent back to DM
+        self.end = True
+        print("Going to the next floor...")

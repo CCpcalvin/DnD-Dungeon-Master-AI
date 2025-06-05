@@ -1,8 +1,9 @@
+import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from LLMModel import LLMModel
-import time
 
 
 class ActionType(Enum):
@@ -49,7 +50,7 @@ class ClassifyAction:
     # def _load_system_prompt(self) -> str:
     #     with open("./trial/prompt/short.txt", "r") as f:
     #         return f.read()
-    
+
     # def _load_user_prompt(self, player_action: str) -> str:
     #     with open("./trial/prompt/user_classify_action_prompt.txt", "r") as f:
     #         return f.read().format(player_action=player_action)
