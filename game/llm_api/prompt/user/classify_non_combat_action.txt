@@ -6,4 +6,7 @@ Player Inventory: {player_inventory}
 History: 
 {history}
 
+Suggested Actions: 
+{suggested_actions}
+
 User Input: {user_input}

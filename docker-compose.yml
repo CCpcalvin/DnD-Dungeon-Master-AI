@@ -1,35 +1,45 @@
-version: '3.8'
-
 services:
-  ollama:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.ollama
-    volumes:
-      - ollama:/root/.ollama
-    ports:
-      - "11434:11434"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
+    ollama:
+        build:
+            context: .
+            dockerfile: docker/Dockerfile.ollama
+        volumes:
+            - ollama:/root/.ollama
+        ports:
+            - "11434:11434"
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: 1
+                          capabilities: [ gpu ]
 
-  backend:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.backend
-    depends_on:
-      - ollama
-    volumes:
-      - .:/home/backend/app
-    tty: true
-    stdin_open: true
-    command: /bin/bash
+    backend:
+        build:
+            context: .
+            dockerfile: docker/Dockerfile.backend
+        depends_on:
+            - ollama
+        volumes:
+            - .:/home/backend/app
+        ports:
+            - "8000:8000"
+        command: python backend/manage.py runserver 0.0.0.0:8000
+
+    frontend:
+        build:
+            context: .
+            dockerfile: docker/Dockerfile.frontend
+        depends_on:
+            - backend
+        volumes:
+            - .:/home/frontend/app
+        ports:
+            - "5173:5173"
+        command: sh -c "cd frontend && HOST=0.0.0.0 npm run dev"
 
 volumes:
-  ollama:
+    ollama:
 
 

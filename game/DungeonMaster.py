@@ -131,10 +131,19 @@ class DungeonMaster:
     def start_game(self):
         self.init_game()
 
-        #! TODO: Now I just use a while loop to simulate the game
-        self.non_combat_floor.init_floor()  # First floor
-        while not self.non_combat_floor.end:
-            user_input = input("User: ")
-            self.non_combat_floor.handle_user_input(user_input)
+        while True:
+            suggested_actions = self.non_combat_floor.init_floor()  # First floor
+            while not self.non_combat_floor.end:
+                user_input = input("User: ")
+
+                output = self.non_combat_floor.handle_user_input(
+                    user_input, suggested_actions
+                )
+
+                if output is not None:
+                    suggested_actions = output
+
+            self.current_floor += 1
+            print("You are in floor: ", self.current_floor)
 
         print("The End!")

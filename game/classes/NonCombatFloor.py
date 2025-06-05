@@ -50,13 +50,6 @@ class NonCombatFloor:
         self.player = player
         self.provider = provider
 
-        # Event completion status
-        self.completion: int = 0
-        self.penalty: float = 0
-        self.fail_penalty: float = 1 / 3
-        self.event_length: int = 3
-        self.progression = Progression(self.event_length)
-
         # History
         self.history: FloorHistory = FloorHistory()
 
@@ -154,12 +147,20 @@ class NonCombatFloor:
         # Init the data
         self.end = False
 
+        # Event completion status
+        self.completion: int = 0
+        self.penalty: float = 0
+        self.fail_penalty: float = 1 / 3
+        self.event_length: int = 3
+        self.progression = Progression(self.event_length)
+
         # Randomize the floor type
         if floor_type is None:
             self.floor_type = random.choice(list(NonCombatFloorType))
         else:
             self.floor_type = floor_type
 
+        print("(System): Room type: ", self.floor_type.value)
         print("(System): Generating floor description...")
         #! TODO: Error handling
         # Get the floor description and investigation hook
@@ -200,16 +201,32 @@ class NonCombatFloor:
         print("What do you want to do?")
         for i, action in enumerate(intro_response.suggested_actions):
             print(f"{i + 1}. {action}")
+
         print(f"{i + 2}. Go to the next floor.")
         print(f"{i + 3}. Write your own action.")
 
         return intro_response.suggested_actions
 
-    def handle_user_input(self, user_input: str):
+    #! TODO: Item usage handling
+    def handle_user_input(self, user_input: str, suggested_actions: list[str]):
         print("(System): Classifying your action...")
 
+        # Do a simple string check first 
+        if len(user_input.strip()) < 10:
+            print(
+                "(System): Your input is too short. Please re-input your action."
+            )
+            return
+
+        for action in suggested_actions:
+            if user_input.strip().lower() in action.lower():
+                return self.handle_ability_check(user_input)
+        
+        if user_input.strip().lower() in "Go to the next floor.".lower():
+            return self.skip_this_floor(user_input)
+
         #! TODO: Error handling
-        classify_action_response = self.classify_action_request.send(user_input)
+        classify_action_response = self.classify_action_request.send(user_input, suggested_actions)
 
         if classify_action_response.narrative_consistency is False:
             print(
@@ -226,11 +243,12 @@ class NonCombatFloor:
         if classify_action_response.action_type == "ability_check":
             self.handle_ability_check(user_input)
 
-        elif classify_action_response.action_type == "use_item":
-            self.handle_use_item()
+        #! TODO: Item usage handling
+        # elif classify_action_response.action_type == "use_item":
+        #     self.handle_use_item()
 
-        elif classify_action_response.action_type == "go_to_next_floor":
-            self.go_to_next_floor()
+        elif classify_action_response.action_type == "skip_this_floor":
+            self.skip_this_floor(user_input)
 
     def handle_ability_check(
         self, user_input: str, by_pass_roll_result: Optional[RollResult] = None
@@ -290,17 +308,6 @@ class NonCombatFloor:
             progression=self.progression,
             floor_type=self.floor_type,
         )
-
-        # Update the player's health
-        #! TODO: Check player health! If it goes below 0, it will be game over
-        if story_extend_response.health_change != 0:
-            print(f"(System): Health change: {story_extend_response.health_change}")
-
-        self.player.update_health(story_extend_response.health_change)
-        if self.player.current_health <= 0:
-            print("(System): You are defeated.")
-            self.end = True
-            return
 
         # Add to the history
         self.history.add_player_actions(user_input, roll_result)
@@ -370,12 +377,15 @@ class NonCombatFloor:
         # Add the user input and story extension to the history
         self.history.add_narrative(response.summary)
 
+        # Update the player's health
+        self.player.update_health(response.health_change)
+
         # Check if the event is ended
         #! TODO:
         if self.progression.is_failed():
             print("(System): The event is ended with failure.")
             self.end = True
-            return
+            return self.go_to_next_floor()
 
         elif self.progression.is_completed():
             print("(System): The event is completed successfully.")
@@ -390,7 +400,7 @@ class NonCombatFloor:
                 recent_history=response.narrative,
             )
             self.end = True
-            return
+            return self.go_to_next_floor()
 
         else:
             # Suggest some actions for the player to take
@@ -408,7 +418,20 @@ class NonCombatFloor:
             print(f"{i + 2}. Write your own action.")
             return suggest_action_response.suggested_actions
 
+    def skip_this_floor(self, user_input: str):
+        if self.end:
+            self.go_to_next_floor()
+
+        else:
+            if (
+                self.floor_type == NonCombatFloorType.NPC_ENCOUNTER
+                or self.floor_type == NonCombatFloorType.HIDDEN_TRAP
+            ):
+                self.handle_ability_check(user_input)
+
+            else:
+                self.end = True
+                print("Going to the next floor...")
+    
     def go_to_next_floor(self):
-        #! TODO: Think about what information need to be sent back to DM
-        print("Going to the next floor...")
-        self.end = True
+        print("(System): Going to the next floor...")

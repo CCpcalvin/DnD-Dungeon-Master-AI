@@ -11,10 +11,10 @@ from typing import Literal
 
 
 class ClassifyNonCombatActionResponseModel(LLMResponseModel):
-    action_type: Literal["ability_check", "use_item", "go_to_next_floor", "unknown"] = (
+    action_type: Literal["ability_check", "use_item", "skip_this_floor", "unknown"] = (
         Field(
             ...,
-            description="The type of action: 'ability_check', 'use_item', 'go_to_next_floor', or 'unknown'",
+            description="The type of action: 'ability_check', 'use_item', 'skip_this_floor', or 'unknown'",
         )
     )
     narrative_consistency: bool = Field(
@@ -43,19 +43,20 @@ class ClassifyNonCombatActionRequest(LLMRequest):
         self.player = player
         self.history = history
 
-    def update_user_prompt(self, user_input: str):
+    def update_user_prompt(self, user_input: str, suggested_actions: list[str]):
         self.set_user_prompt(
             self.user_prompt_template.format(
                 theme=self.theme,
                 player_description=self.player.description,
                 player_inventory=self.player.inventory_prompt(),
                 history=self.history.history_prompt(),
+                suggested_actions=str(suggested_actions),
                 user_input=user_input,
             )
         )
 
-    def send(self, user_input: str):
-        self.update_user_prompt(user_input)
+    def send(self, user_input: str, suggested_actions: list[str]):
+        self.update_user_prompt(user_input, suggested_actions)
         return self.provider.get_completion(
             ResponseModel=self.ResponseModel,
             messages=self.messages,

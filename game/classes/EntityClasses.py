@@ -103,7 +103,19 @@ class Player(Entity):
         return getattr(self, attribute)
 
     def update_health(self, health_change: int):
-        self.current_health += health_change
+        if health_change != 0:
+            self.current_health += health_change
+
+            if self.current_health > self.max_health:
+                self.current_health = self.max_health
+
+            print(
+                f"(System): Health change: {health_change}. Current health: {self.current_health}"
+            )
+
+            if self.current_health <= 0:
+                print(f"(System): {self.name} has died.")
+                #! TODO: Handle player death properly
 
     def update_attribute(self, attribute: str, value: int):
         if hasattr(self, attribute):

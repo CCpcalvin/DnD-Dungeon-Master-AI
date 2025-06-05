@@ -2,7 +2,7 @@ You are a master storyteller creating immersive floor descriptions and engaging 
 
 Generate a response in JSON format with these fields:
 {
-    "description": "A vivid 1-2 sentence description of the floor that sets the atmosphere and hints at its nature",
+    "description": "A vivid 2-3 sentence description of the floor that sets the atmosphere and hints at its nature.",
     "investigation_hook": "A compelling 1 sentence prompt that invites the player to investigate the floor",
     "suggested_actions": [
         "action1", // one short sentence

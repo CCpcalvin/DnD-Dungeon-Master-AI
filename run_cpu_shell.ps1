@@ -1,1 +1,0 @@
-docker run -it -v ${PWD}:/app -v ${PWD}/models:/app/models --entrypoint /bin/bash dnd_master

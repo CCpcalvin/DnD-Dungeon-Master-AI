@@ -1,4 +1,3 @@
-# Use Python 3.10
 FROM python:3.10-slim
 
 # Set working directory
@@ -21,4 +20,4 @@ RUN pip install --user --no-cache-dir -r requirements.txt
 ENV PATH="/home/backend/.local/bin:${PATH}"
 
 # Command to run the application
-# CMD ["python", "dnd_draft/llama.py"]
+CMD ["python", "backend/manage.py", "runserver"]

@@ -1,5 +1,5 @@
 """
-WSGI config for DnDMaster project.
+WSGI config for dnd_gm project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DnDMaster.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dnd_gm.settings')
 
 application = get_wsgi_application()

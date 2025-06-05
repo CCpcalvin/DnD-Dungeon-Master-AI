@@ -1,15 +1,16 @@
-Generate a vivid and immersive floor description, along with an engaging investigation hook using the following details:
+Generate a vivid, immersive, and highly original floor description, along with an engaging investigation hook, using the following details:
 
 Game Theme: {theme}
 Player Description: {player_description}
 Floor Type: {floor_type}
 
-In this room, the player should encounter intriguing treasures to discover, unlock, or interact with. Be creative and descriptive. Possible treasures include, but are not limited to:
+In this room, the player should encounter intriguing treasures to discover, unlock, or interact with. Use rich sensory details (sight, sound, touch, even scent) and avoid clichés. Possible treasures include, but are not limited to:
 - A locked treasure chest requiring lockpicking skills
 - A magically sealed box that can only be opened by solving a clever puzzle
 - An encrypted scroll or ancient book that, once deciphered, grants the player new knowledge
 - A hidden stash of valuables, cleverly concealed and requiring keen observation to find
 - Any combination of the above, or other unique and imaginative treasures
 
-Make the room feel mysterious and rewarding. End with a hook that encourages the player to investigate further.
+Make the room feel mysterious, rewarding, and full of potential secrets. Avoid overused tropes and repetitive phrases like "hum", "tomes", "pedestal". Be creative and surprising. End with a compelling hook that encourages the player to investigate further, sparking curiosity and anticipation.
+
 
