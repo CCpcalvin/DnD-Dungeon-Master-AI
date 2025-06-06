@@ -8,3 +8,10 @@
    We mainly use llama3 for the LLM. 
 
 
+# Python Package
+--- 
+- dotenv
+- openAI
+- django
+- djangorestframework
+- django-cors-headers
