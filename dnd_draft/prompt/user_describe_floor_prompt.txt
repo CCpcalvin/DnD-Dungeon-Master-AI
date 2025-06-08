@@ -1,5 +1,0 @@
-Describe floor {current_floor} of the tower. 
-Floor type: {floor_type}
-History: {history}
-
-Make this description 2-3 paragraphs. Include environmental details and any immediate observations.

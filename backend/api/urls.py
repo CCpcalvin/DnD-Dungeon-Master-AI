@@ -1,7 +1,18 @@
 from django.urls import path
-from .views import index, session_new
+from .views import index, CreateUserView, new_session, create_player
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
     path("", index, name="index"),
-    path("session/new/", session_new, name="session_new"),
+    # User
+    path("user/register", CreateUserView.as_view(), name="register"),
+    path("user/token", TokenObtainPairView.as_view(), name="get_token"),
+    path("user/token/refresh", TokenRefreshView.as_view(), name="refrest_token"),
+    # Game
+    path("session/new/", new_session, name="session_new"),
+    path(
+        "session/<int:session_id>/create-player",
+        create_player,
+        name="create_player",
+    ),
 ]

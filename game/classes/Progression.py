@@ -2,6 +2,12 @@ class Progression:
     def __init__(self, end: int):
         self.completion_rate: int = 0
         self.end = end
+    
+    @classmethod
+    def load(cla, completion_rate: int, end: int):
+        progression = cla(end)
+        progression.completion_rate = completion_rate
+        return progression
 
     def fail(self):
         """Set the progression to fail."""

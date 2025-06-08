@@ -42,7 +42,10 @@ from game.Const import GAME_PATH
 
 
 class NonCombatFloor:
+    # Config
     mocks_dir = os.path.join(GAME_PATH, "test", "mock")
+    fail_penalty: float = 1 / 3
+    event_length: int = 3
 
     def __init__(self, theme: str, player: Player, provider: LLMProvider):
         # Floor properties
@@ -143,27 +146,10 @@ class NonCombatFloor:
         if not os.path.exists(self.current_mock_dir):
             os.makedirs(self.current_mock_dir)
 
-    def init_floor(self, floor_type: Optional[NonCombatFloorType] = None):
-        # Init the data
-        self.end = False
-
-        # Event completion status
-        self.completion: int = 0
-        self.penalty: float = 0
-        self.fail_penalty: float = 1 / 3
-        self.event_length: int = 3
-        self.progression = Progression(self.event_length)
-
-        # Randomize the floor type
-        if floor_type is None:
-            self.floor_type = random.choice(list(NonCombatFloorType))
-        else:
-            self.floor_type = floor_type
-
-        print("Floor type: ", self.floor_type.value)
-
-        print("(System): Generating floor description...")
-        #! TODO: Error handling
+    def generate_floor_type(self):
+        self.floor_type = random.choice(list(NonCombatFloorType))
+    
+    def generate_floor_intro(self):
         # Get the floor description and investigation hook
         match self.floor_type:
             case NonCombatFloorType.TREASURE:
@@ -190,14 +176,39 @@ class NonCombatFloor:
                 intro_response = self.intro_request.send(
                     floor_type=self.floor_type,
                 )
-
+            
         # Set the description
         self.description = intro_response.description
 
+        # Get narrative
         narrative = self.description + " " + intro_response.investigation_hook
-        print(narrative)
 
+        # Update floor history
         self.history.add_narrative(intro_response.summary)
+
+        return intro_response, narrative
+
+    def init_floor(self, floor_type: Optional[NonCombatFloorType] = None):
+        # Init the data
+        self.end = False
+
+        # Event completion status
+        self.penalty: float = 0
+        self.progression = Progression(self.event_length)
+
+        # Randomize the floor type
+        if floor_type is None:
+            self.generate_floor_type()
+        else:
+            self.floor_type = floor_type
+
+        print("Floor type: ", self.floor_type.value)
+
+        print("(System): Generating floor description...")
+        #! TODO: Error handling
+        # Get the floor description and investigation hook
+        intro_response, narrative = self.generate_floor_intro()
+        print(narrative)
 
         print("What do you want to do?")
         for i, action in enumerate(intro_response.suggested_actions):

@@ -6,9 +6,10 @@ import api from '../../api'
 
 async function get_session_id() {
   const res = await api.post('/session/new/')
+  console.log('Response:', res);
   if (res.status === 200) {
-    console.log('Session ID:', res.data.session_id);
-    return res.data.session_id;
+    console.log('Session created successfully');
+    // console.log('Session ID:', res.data.session_id);
   } else {
     throw new Error('Failed to get session ID');
   }
@@ -38,5 +39,6 @@ function Home() {
     </div >
   );
 }
+
 
 export default Home;

@@ -29,11 +29,12 @@ class Player(Entity):
     max_per_attr: int = 9
 
     start_health: int = 10
+    start_attribute_sum: int = 30
 
     @classmethod
     def create_start_player_with_random_stats(cls, name: str, description: str):
         """
-        Create a new Player with randomized stats that sum to 35,
+        Create a new Player with randomized stats that sum to 30,
         with each stat having a maximum of 9.
         """
         # Define the attributes we want to randomize
@@ -45,7 +46,7 @@ class Player(Entity):
             "wisdom",
             "charisma",
         ]
-        total_points = 30
+        total_points = cls.start_attribute_sum
 
         # Start with minimum values
         stats = {attr: cls.min_per_attr for attr in attributes}
@@ -128,6 +129,8 @@ class Player(Entity):
 
         else:
             raise AttributeError(f"{attribute} is not a valid attribute of Player")
+    
+    
 
 
 @dataclass

@@ -3,8 +3,15 @@ from game.classes.RollResults import RollResult
 
 class FloorHistory:
     def __init__(self):
-        self.content = []
-        self.summary = ""
+        self.content: list[dict] = []
+        self.summary: str = ""  # TODO
+
+    @classmethod
+    def load(cls, content: list[dict[str, str]], summary: str = ""):
+        floor_history = cls()
+        floor_history.content = content
+        floor_history.summary = summary
+        return floor_history
 
     def add_narrative(self, narrative: str):
         self.content.append({"role": "Narrator", "content": narrative})
@@ -13,7 +20,9 @@ class FloorHistory:
         self.content.append({"role": "System", "content": system})
 
     def add_player_actions(self, actions: str, result: RollResult):
-        self.content.append({"role": "Player", "content": actions, "result": result})
+        self.content.append(
+            {"role": "Player", "content": actions, "result": result.value}
+        )
 
     def has_summary(self):
         return len(self.summary) > 0
@@ -28,7 +37,7 @@ class FloorHistory:
         string = ""
         for item in self.content:
             if item["role"] == "Player":
-                string += f"Player: {item['content']}.({item['result'].value})\n"
+                string += f"Player: {item['content']}.({item['result']})\n"
             else:
                 string += f"{item['role']}: {item['content']}\n"
 
@@ -41,7 +50,7 @@ class FloorHistory:
         string = ""
         for item in self.content:
             if item["role"] == "Player":
-                string += f"Player: {item['content']}. ({item['result'].value})\n"
+                string += f"Player: {item['content']}. ({item['result']})\n"
             elif item["role"] == "Narrator":
                 string += f"Narrator: {item['content']}\n"
 

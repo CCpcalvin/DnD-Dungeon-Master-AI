@@ -342,6 +342,10 @@ while not game over:
       - a item?
 
 
+# Website logic
+- 
+
+
 # Log
 ---
 1st June
@@ -358,4 +362,5 @@ The reason not to use it is that
 
   - LLM cannot distinguish between the confusing item name and the correct one 
     - More specifically, we cannot identity these two by looking about the confidence score
+
 

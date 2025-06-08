@@ -4,7 +4,7 @@ from game.classes.EntityClasses import Player
 from game.models.LLMProvider import LLMProvider
 from game.llm_api.LLMRequest import LLMRequest, LLMResponseModel
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 
 class ItemIdentificationResponseModel(LLMResponseModel):

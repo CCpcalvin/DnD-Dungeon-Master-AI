@@ -2,7 +2,6 @@ from game.Const import GAME_PATH
 from game.models.LLMProvider import LLMProvider
 
 from game.classes.EntityClasses import Player
-from game.classes.FloorHistory import FloorHistory
 
 from game.llm_api.BackgroundRequest import BackgroundRequest, BackgroundResponseModel
 from game.llm_api.ThemeCondenseRequest import (
@@ -27,7 +26,6 @@ class DungeonMaster:
 
     def __init__(self, provider: LLMProvider):
         self.provider = provider
-        self.history: list[FloorHistory] = []
 
         # Request objects
         self.background_request = BackgroundRequest(self.provider)
@@ -50,6 +48,21 @@ class DungeonMaster:
         """
         file_path = os.path.join(self.current_mock_dir, file_name)
         return os.path.exists(file_path)
+    
+    # Faster method for production
+    def generate_theme(self):
+        background_response = self.background_request.send()
+        return background_response
+    
+    def condense_theme(self, theme: str, player_backstory: str):
+        """ Condense the theme and player backstory into a shorter version.
+        This is used to generate the theme for the player.
+        """
+        theme_condense_response = self.theme_condense_request.send(
+            theme=theme,
+            player_backstory=player_backstory,
+        )
+        return theme_condense_response
 
     def init_game(self, mock: Optional[int] = None):
         if mock is not None:
@@ -142,5 +155,3 @@ class DungeonMaster:
                     suggested_actions = output
             
             self.current_floor += 1
-
-        print("The End!")

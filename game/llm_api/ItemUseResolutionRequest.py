@@ -7,7 +7,7 @@ from game.classes.NonCombatFloorType import NonCombatFloorType
 
 from game.models.LLMProvider import LLMProvider
 from game.llm_api.LLMRequest import LLMRequest, LLMResponseModel
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 
 class ItemUseResolutionResponseModel(LLMResponseModel):

@@ -11,11 +11,9 @@ from typing import Literal
 
 #! TODO: Later do the item handling
 class ClassifyNonCombatActionResponseModel(LLMResponseModel):
-    action_type: Literal["ability_check", "skip_floor", "unknown"] = (
-        Field(
-            ...,
-            description="The type of action: 'ability_check', 'skip_floor', or 'unknown'",
-        )
+    action_type: Literal["ability_check", "skip_floor", "unknown"] = Field(
+        ...,
+        description="The type of action: 'ability_check', 'skip_floor', or 'unknown'",
     )
     narrative_consistency: bool = Field(
         ..., description="Whether the user input is consistent with the narrative"

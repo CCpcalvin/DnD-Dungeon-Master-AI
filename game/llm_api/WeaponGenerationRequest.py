@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from game.llm_api.LLMRequest import LLMRequest
 from game.models.LLMProvider import LLMProvider
-from game.classes.ItemClasses import Rarity, Weapon
-from game.Const import SYSTEM_PROMPT_PATH, USER_PROMPT_PATH
+from game.classes.ItemClasses import Rarity
 
 from pydantic import BaseModel, Field
 
