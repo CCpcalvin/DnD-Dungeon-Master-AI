@@ -1,6 +1,12 @@
 from game.DungeonMaster import DungeonMaster
 from game.classes.EntityClasses import Player
 from game.models.LLMProvider import ollama
+from game.classes.NonCombatFloor import (
+    HandleUserInputError,
+    HandleUserInputEnd,
+    HandleUserInputDefeat,
+    HandleUserInputSuggestedAction,
+)
 
 from django.http import HttpResponse, JsonResponse, HttpRequest
 
@@ -14,6 +20,7 @@ from django.contrib.auth.models import User
 from .models import (
     GameState,
     GameSession,
+    Role,
     GameEvent,
     PlayerInfo,
     FloorHistoryModel,
@@ -64,7 +71,9 @@ def new_session(request: HttpRequest):
     )
 
     # Save to GameEvent for storage
-    GameEvent.objects.create(session=session, content=combined_content)
+    GameEvent.objects.create(
+        session=session, role=Role.NARRATOR, content=combined_content
+    )
 
     # Now we condense the story
     condensed_response = dm.condense_theme(
@@ -98,7 +107,7 @@ def create_player(request: HttpRequest, session_id: int):
         session: GameSession = GameSession.objects.get(pk=session_id)
 
     except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=404)
+        return JsonResponse({"error": "Session does not exist"}, status=400)
 
     if session.user != request.user:
         return JsonResponse({"error": "You do not own this session"}, status=403)
@@ -116,7 +125,7 @@ def create_player(request: HttpRequest, session_id: int):
         wisdom = data["wisdom"]
         charisma = data["charisma"]
 
-    except (KeyError, json.JSONDecodeError):
+    except:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
     # Server-validation
@@ -168,7 +177,7 @@ def create_player(request: HttpRequest, session_id: int):
     intro_response, narrative = floor.generate_floor_intro()
 
     # Save the GameEvent
-    GameEvent.objects.create(session=session, content=narrative)
+    GameEvent.objects.create(session=session, role=Role.NARRATOR, content=narrative)
 
     # Now update everything
     session.save_dm(dm)
@@ -179,4 +188,74 @@ def create_player(request: HttpRequest, session_id: int):
     )
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def player_input(request: HttpRequest, session_id: int):
+    try:
+        session: GameSession = GameSession.objects.get(pk=session_id)
 
+    except GameSession.DoesNotExist:
+        return JsonResponse({"error": "Session does not exist"}, status=402)
+
+    if session.user != request.user:
+        return JsonResponse({"error": "You do not own this session"}, status=403)
+
+    if session.game_state != GameState.IN_PROGRESS:
+        return JsonResponse({"error": "Cannot interact in this state"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        action = data["action"]
+
+    except:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    # Load the DM
+    dm = session.load_dm()
+
+    # Get the output from dm
+    output = dm.non_combat_floor.handle_user_input(action, verbose=False)
+
+    # Check the output type
+    if isinstance(output, HandleUserInputError):
+        return JsonResponse({"error": output.error_message}, status=400)
+
+    session.game_state = GameState.IN_PROGRESS
+
+    # Save the GameEvents
+    for message in output.messages:
+        GameEvent.objects.create(
+            session=session,
+            role=Role(message["role"]),
+            content=message["content"],
+        )
+
+    # Save the dm
+    session.save_dm(dm)
+
+    # For different output type
+    if isinstance(output, HandleUserInputEnd):
+        session.game_state = GameState.WAITING_FOR_NEXT_FLOOR
+        session.save()
+        return JsonResponse(
+            {
+                "events": output.messages,
+            }
+        )
+
+    elif isinstance(output, HandleUserInputDefeat):
+        session.game_state = GameState.DEFEATED
+        session.save()
+        return JsonResponse(
+            {
+                "events": output.messages,
+            }
+        )
+
+    else:
+        return JsonResponse(
+            {
+                "events": output.messages,
+                "suggested_actions": output.suggested_actions,
+            }
+        )

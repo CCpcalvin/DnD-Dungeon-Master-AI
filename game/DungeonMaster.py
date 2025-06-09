@@ -14,7 +14,7 @@ from game.llm_api.ThemeCondenseRequest import (
 #     WeaponGenerationResponse,
 # )
 
-from game.classes.NonCombatFloor import NonCombatFloor
+from game.classes.NonCombatFloor import NonCombatFloor, HandleUserInputSuggestedAction
 
 import os
 
@@ -48,14 +48,14 @@ class DungeonMaster:
         """
         file_path = os.path.join(self.current_mock_dir, file_name)
         return os.path.exists(file_path)
-    
+
     # Faster method for production
     def generate_theme(self):
         background_response = self.background_request.send()
         return background_response
-    
+
     def condense_theme(self, theme: str, player_backstory: str):
-        """ Condense the theme and player backstory into a shorter version.
+        """Condense the theme and player backstory into a shorter version.
         This is used to generate the theme for the player.
         """
         theme_condense_response = self.theme_condense_request.send(
@@ -149,9 +149,18 @@ class DungeonMaster:
             self.non_combat_floor = self.non_combat_floor.reload()
             suggested_actions = self.non_combat_floor.init_floor()  # First floor
             while not self.non_combat_floor.end:
-                user_input = input("User: ")
-                output = self.non_combat_floor.handle_user_input(user_input, suggested_actions)
-                if output is not None:
-                    suggested_actions = output
-            
+                user_input = input("Player: ")
+                output = self.non_combat_floor.handle_user_input(
+                    user_input, suggested_actions
+                )
+
+                # print("")
+                # print("------------------------")
+                # print(output.get_messages())
+                # print("------------------------")
+                # print("")
+
+                if isinstance(output, HandleUserInputSuggestedAction):
+                    suggested_actions = output.suggested_actions
+
             self.current_floor += 1

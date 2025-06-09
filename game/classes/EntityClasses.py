@@ -103,14 +103,15 @@ class Player(Entity):
     def get_attribute(self, attribute: str) -> int:
         return getattr(self, attribute)
 
-    def update_health(self, health_change: int):
+    def update_health(self, health_change: int, verbose: bool = True):
         if health_change != 0:
             self.current_health += health_change
 
             if self.current_health > self.max_health:
                 self.current_health = self.max_health
 
-            print(f"(System): Health change: {health_change}. Current health: {self.current_health}/{self.max_health}")
+            if verbose:
+                print(f"(System): Health change: {health_change}. Current health: {self.current_health}/{self.max_health}")
         
 
     def update_attribute(self, attribute: str, value: int):
@@ -130,6 +131,8 @@ class Player(Entity):
         else:
             raise AttributeError(f"{attribute} is not a valid attribute of Player")
     
+    def is_defeated(self) -> bool:
+        return self.current_health <= 0
     
 
 

@@ -3,6 +3,7 @@ from django.contrib.auth.models import User  # Input Users model
 
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
+from game.classes.NonCombatFloorType import NonCombatFloorType
 from game.classes.NonCombatFloor import NonCombatFloor
 from game.classes.Progression import Progression
 from game.models.LLMProvider import ollama
@@ -12,6 +13,7 @@ from game.DungeonMaster import DungeonMaster
 class GameState(models.TextChoices):
     PLAYER_CREATION = "Player Creation"
     IN_PROGRESS = "In Progress"
+    WAITING_FOR_NEXT_FLOOR = "Waiting for Next Floor"
     COMPLETED = "Completed"
 
 
@@ -27,7 +29,7 @@ class GameSession(models.Model):
     )  # Theme of the game session
     current_floor = models.IntegerField(default=1)  # Current floor in the game session
     game_state = models.CharField(
-        max_length=20,
+        max_length=25,
         choices=GameState.choices,
         default=GameState.IN_PROGRESS,
     )  # State of the game session
@@ -58,6 +60,12 @@ class GameSession(models.Model):
         self.save()
 
 
+class Role(models.TextChoices):
+    PLAYER = "Player"
+    NARRATOR = "Narrator"
+    SYSTEM = "System"
+
+
 class GameEvent(models.Model):
     """
     Stores a single event or story segment in a game session.
@@ -66,6 +74,7 @@ class GameEvent(models.Model):
     session = models.ForeignKey(
         GameSession, on_delete=models.CASCADE, related_name="events"
     )
+    role = models.CharField(max_length=20, choices=Role.choices)
     content = models.TextField()  # The story segment
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -182,7 +191,7 @@ class NonCombatFloorModel(models.Model):
 
         # Set class attributes
         floor.history = floor_history
-        floor.floor_type = NonCombatFloorTypeModel(self.floor_type)
+        floor.floor_type = NonCombatFloorType(self.floor_type)
         floor.penalty = self.penalty
         floor.progression = Progression.load(self.completion_rate, floor.event_length)
 

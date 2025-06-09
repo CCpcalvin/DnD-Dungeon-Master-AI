@@ -1,5 +1,5 @@
 import os, random
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
@@ -39,6 +39,74 @@ from game.llm_api.ClassifyRewardTypeRequest import ClassifyRewardTypeRequest
 from game.llm_api.AttributeRewardRequest import AttributeRewardRequest
 
 from game.Const import GAME_PATH
+
+
+class HandleUserInputRespond:
+    """Base class for handle_user_input responses"""
+
+    def __init__(self, messages: Optional[list[dict[str, str]]] = None):
+        self.messages: list[dict[str, str]] = messages if messages is not None else []
+
+    def add_message(self, message: dict[str, str]):
+        self.messages.append(message)
+
+    def get_messages(self):
+        output_list = []
+        for message in self.messages:
+            if message["role"] == "Player":
+                output_list.append("Player: " + message["content"])
+            elif message["role"] == "System":
+                output_list.append("System: " + message["content"])
+            elif message["role"] == "Narrator":
+                output_list.append("Narrator: " + message["content"])
+
+        return "\n".join(output_list)
+
+
+class HandleUserInputError(HandleUserInputRespond):
+    """Response for error cases in user input handling"""
+
+    def __init__(
+        self, error_message: str, messages: Optional[list[dict[str, str]]] = None
+    ):
+        super().__init__(messages)
+        self.error_message = error_message
+
+    @classmethod
+    def load(cls, response: HandleUserInputRespond, error_message: str):
+        return cls(response.messages, error_message)
+
+
+class HandleUserInputEnd(HandleUserInputRespond):
+    """Response when the floor ends and player moves to next floor"""
+
+    @classmethod
+    def load(cls, response: HandleUserInputRespond):
+        return cls(response.messages)
+
+
+class HandleUserInputSuggestedAction(HandleUserInputRespond):
+    """Response with suggested actions for the player"""
+
+    def __init__(
+        self,
+        suggested_actions: List[str],
+        messages: Optional[list[dict[str, str]]] = None,
+    ):
+        super().__init__(messages)
+        self.suggested_actions = suggested_actions
+
+    @classmethod
+    def load(cls, response: HandleUserInputRespond, suggested_actions: List[str]):
+        return cls(suggested_actions, response.messages)
+
+
+class HandleUserInputDefeat(HandleUserInputRespond):
+    """Response when the player is defeated"""
+
+    @classmethod
+    def load(cls, response: HandleUserInputRespond):
+        return cls(response.messages)
 
 
 class NonCombatFloor:
@@ -148,7 +216,7 @@ class NonCombatFloor:
 
     def generate_floor_type(self):
         self.floor_type = random.choice(list(NonCombatFloorType))
-    
+
     def generate_floor_intro(self):
         # Get the floor description and investigation hook
         match self.floor_type:
@@ -176,7 +244,7 @@ class NonCombatFloor:
                 intro_response = self.intro_request.send(
                     floor_type=self.floor_type,
                 )
-            
+
         # Set the description
         self.description = intro_response.description
 
@@ -218,52 +286,75 @@ class NonCombatFloor:
 
         return intro_response.suggested_actions
 
-    def handle_user_input(self, user_input: str, suggested_actions: list[str]):
-        print("(System): Classifying your action...")
+    def handle_user_input(
+        self, user_input: str, suggested_actions: list[str], verbose: bool = True
+    ) -> HandleUserInputRespond:
+        output = HandleUserInputRespond()
+
+        if verbose:
+            print("(System): Classifying your action...")
 
         # Do a simple string check
         if len(user_input.strip()) < 10:
-            print(
-                "(System): Your action is too short. Please re-input your action with more details."
+            if verbose:
+                print(
+                    "(System): Your action is too short. Please re-input your action with more details."
+                )
+
+            return HandleUserInputError.load(
+                output,
+                "Your action is too short. Please re-input your action with more details.",
             )
-            return
 
         formatted_user_input = user_input.lower().strip()
         for action in suggested_actions:
-            # If the user input is a part of the suggested action, handle it as an ability check
+            # If the user input is a part of the suggested action, handle it as an ability check directly
             if formatted_user_input in action.lower().strip():
-                return self.handle_ability_check(user_input)
+                output.add_message({"role": "Player", "content": user_input})
+                return self.handle_ability_check(user_input, output)
 
         # If the user input is "go to the next floor", skip the floor
         if formatted_user_input in "Go to the next floor.".lower().strip():
-            return self.skip_floor(user_input)
+            output.add_message({"role": "Player", "content": user_input})
+            return self.skip_floor(user_input, output)
 
         #! TODO: Error handling
         classify_action_response = self.classify_action_request.send(user_input)
 
         if classify_action_response.narrative_consistency is False:
-            print(
-                "(System): Your action is not consistent with the narrative. Please re-input your action"
+            if verbose:
+                print(
+                    "(System): Your action is not consistent with the narrative. Please re-input your action"
+                )
+            return HandleUserInputError.load(
+                output,
+                "Your action is not consistent with the narrative. Please re-input your action",
             )
-            return
 
         if classify_action_response.action_type == "unknown":
-            print(
-                "(System): System cannot classify your action. Please re-input your action"
+            if verbose:
+                print(
+                    "(System): System cannot classify your action. Please re-input your action"
+                )
+            return HandleUserInputError.load(
+                output,
+                "System cannot classify your action. Please re-input your action",
             )
-            return
 
+        output.add_message({"role": "Player", "content": user_input})
         if classify_action_response.action_type == "ability_check":
-            self.handle_ability_check(user_input)
+            return self.handle_ability_check(user_input, output)
 
         #! TODO: Not yet implemented
         elif classify_action_response.action_type == "use_item":
-            self.handle_use_item()
+            return self.handle_use_item()
 
         elif classify_action_response.action_type == "go_to_next_floor":
-            self.skip_floor(user_input)
+            return self.skip_floor(user_input, output)
 
-    def handle_ability_roll(self, user_input: str):
+    def handle_ability_roll(
+        self, user_input: str, output: HandleUserInputRespond, verbose: bool = True
+    ):
         #! TODO: Error handling
         ability_check_response = self.ability_check_request.send(user_input)
 
@@ -288,17 +379,23 @@ class NonCombatFloor:
                 roll_result = RollResult.FAILURE
 
         # Print it out for player
-        print(
-            f"(System): Score: {score} = {roll} (Roll) + {self.player.get_attribute(ability_check_response.attribute)} ({ability_check_response.attribute}). The DC is {ability_check_response.difficulty_class}. It is {roll_result.value}."
-        )
+        feedback = f"(System): Score: {score} = {roll} (Roll) + {self.player.get_attribute(ability_check_response.attribute)} ({ability_check_response.attribute}). The DC is {ability_check_response.difficulty_class}. It is {roll_result.value}."
+        if verbose:
+            print(feedback)
+
+        output.add_message({"role": "System", "content": feedback})
 
         return roll_result
 
     def handle_ability_check(
-        self, user_input: str, by_pass_roll_result: Optional[RollResult] = None
-    ):
+        self,
+        user_input: str,
+        output: HandleUserInputRespond,
+        by_pass_roll_result: Optional[RollResult] = None,
+        verbose: bool = True,
+    ) -> HandleUserInputRespond:
         if by_pass_roll_result is None:
-            roll_result = self.handle_ability_roll(user_input)
+            roll_result = self.handle_ability_roll(user_input, output, verbose=verbose)
         else:
             roll_result = by_pass_roll_result
 
@@ -327,34 +424,43 @@ class NonCombatFloor:
         )
 
         # Update the player's health
-        #! TODO: Check player health! If it goes below 0, it will be game over
-        self.player.update_health(story_extend_response.health_change)
-        if self.player.current_health <= 0:
-            print("(System): You are defeated.")
-            self.end = True
-            return
+        #! TODO: Check player health! We need special treatment when player is dead here
+        self.player.update_health(story_extend_response.health_change, verbose=verbose)
 
         # Add to the history
         self.history.add_player_actions(user_input, roll_result)
 
-        return self.handle_resolution(story_extend_response)
+        return self.handle_resolution(story_extend_response, output, verbose=verbose)
 
-    def handle_use_item(self):
+    #! TODO here
+    def handle_use_item(self, verbose: bool = True) -> HandleUserInputRespond:
         if self.player.num_of_items() == 0:
-            print(
-                "(System): I think you are trying to use an item, but you have no items in your inventory. Please re-input your action"
+            if verbose:
+                print(
+                    "(System): I think you are trying to use an item, but you have no items in your inventory. Please re-input your action"
+                )
+            return HandleUserInputError(
+                "I think you are trying to use an item, but you have no items in your inventory. Please re-input your action"
             )
-            return
 
-        item_index = int(
-            input("(System): Please input the item index you want to use: ")
-        )
-        user_input = input("(System): How do you use the item?\n")
+        if verbose:
+            item_index = int(
+                input("(System): Please input the item index you want to use: ")
+            )
+            user_input = input("(System): How do you use the item?\n")
+        else:
+            # Default values when not in verbose mode
+            item_index = 0
+            user_input = "Use item"
 
         return self.use_item_resolution(item_index, user_input)
 
-    def use_item_resolution(self, item_index: int, user_input: str):
-        print("(System): Resolving item usage...")
+    #! TODO here
+    def use_item_resolution(
+        self, item_index: int, user_input: str, verbose: bool = True
+    ):
+        if verbose:
+            print("(System): Resolving item usage...")
         #! TODO: Error handling
         item_use_resolution_response = self.item_use_resolution_request.send(
             item_to_use=self.player.inventory[item_index],
@@ -367,15 +473,31 @@ class NonCombatFloor:
 
         return self.handle_resolution(item_use_resolution_response)
 
-    def handle_reward(self, reward_type: str, recent_history: str):
+    def handle_reward(
+        self,
+        reward_type: str,
+        recent_history: str,
+        output: HandleUserInputRespond,
+        verbose: bool = True,
+    ):
         if reward_type == "heal":
             heal_amount = random.randint(1, 4)
-            print(f"(System): You are healed for {heal_amount} health.")
-            self.player.update_health(heal_amount)
+            feedback = f"(System): You are healed for {heal_amount} health."
+            output.add_message({"role": "System", "content": feedback})
+            if verbose:
+                print(feedback)
+
+            self.player.update_health(heal_amount, verbose=verbose)
 
         elif reward_type == "max_health_increase":
             increase_amount = 1
-            print(f"(System): Your maximum health is increased by {increase_amount}")
+            feedback = (
+                f"(System): Your maximum health is increased by {increase_amount}."
+            )
+            output.add_message({"role": "System", "content": feedback})
+            if verbose:
+                print(feedback)
+
             self.player.max_health += increase_amount
 
         elif reward_type == "attribute_increase":
@@ -383,11 +505,12 @@ class NonCombatFloor:
                 recent_history=recent_history
             )
             self.player.update_attribute(attribute_reward_respond.attribute, 1)
-            print(
-                f"(System): Your {attribute_reward_respond.attribute} is increased by 1."
-            )
+            feedback = f"(System): Your {attribute_reward_respond.attribute} is increased by 1."
+            output.add_message({"role": "System", "content": feedback})
+            if verbose:
+                print(feedback)
 
-        else:
+        elif verbose:
             print("(System): Unknown reward type. No reward given.")
 
     def handle_resolution(
@@ -395,21 +518,33 @@ class NonCombatFloor:
         response: Union[
             ItemUseResolutionResponseModel, AbilityCheckResolutionResponseModel
         ],
-    ):
-        # Print the story
-        print(response.narrative)
+        output: HandleUserInputRespond,
+        verbose: bool = True,
+    ) -> HandleUserInputRespond:
+        # Print the story if in verbose mode
+        output.add_message({"role": "Narrator", "content": response.narrative})
+        if verbose:
+            print(response.narrative)
 
         # Add the user input and story extension to the history
         self.history.add_narrative(response.summary)
 
         # Check if the event is ended
         #! TODO:
+        if self.player.is_defeated():
+            if verbose:
+                print("(System): You are defeated.")
+
+            return HandleUserInputDefeat.load(output)
+
         if self.progression.is_failed():
-            print("(System): The event is ended with failure.")
-            return self.go_to_next_floor()
+            if verbose:
+                print("(System): The event is ended with failure.")
+            return self.go_to_next_floor(output, verbose=verbose)
 
         elif self.progression.is_completed():
-            print("(System): The event is completed successfully.")
+            if verbose:
+                print("(System): The event is completed successfully.")
 
             classify_reward_type_respond = self.classify_reward_type_request.send(
                 recent_history=response.narrative,
@@ -419,44 +554,64 @@ class NonCombatFloor:
             self.handle_reward(
                 classify_reward_type_respond.reward_type,
                 recent_history=response.narrative,
+                output=output,
+                verbose=verbose,
             )
-            return self.go_to_next_floor()
+            return self.go_to_next_floor(output, verbose=verbose)
 
         else:
             # Suggest some actions for the player to take
-            print("(System): Suggesting actions...")
+            if verbose:
+                print("(System): Suggesting actions...")
+
             #! TODO: Error handling
             suggest_action_response = self.suggest_action_request.send(
                 recent_history=response.narrative,
             )
 
-            # Print the suggested actions
-            print("(System): Suggested actions:")
-            for i, action in enumerate(suggest_action_response.suggested_actions):
-                print(f"{i + 1}. {action}")
+            if verbose:
+                # Print the suggested actions
+                print("(System): Suggested actions:")
+                for i, action in enumerate(suggest_action_response.suggested_actions):
+                    print(f"{i + 1}. {action}")
 
-            print(f"{i + 2}. Write your own action.")
-            return suggest_action_response.suggested_actions
+                print(f"{i + 2}. Write your own action.")
 
-    def skip_floor(self, user_input: str):
+            return HandleUserInputSuggestedAction.load(
+                output, suggest_action_response.suggested_actions
+            )
+
+    def skip_floor(
+        self, user_input: str, output: HandleUserInputRespond, verbose: bool = True
+    ) -> HandleUserInputRespond:
         if not self.end:
             if (
                 self.floor_type == NonCombatFloorType.HIDDEN_TRAP
                 or self.floor_type == NonCombatFloorType.NPC_ENCOUNTER
             ):
                 # Check if the user can skip the floor
-                roll_result = self.handle_ability_roll(user_input)
+                roll_result = self.handle_ability_roll(
+                    user_input, output, verbose=verbose
+                )
 
                 if (
                     roll_result == RollResult.CRITICAL_FAILURE
                     or roll_result == RollResult.FAILURE
                 ):
                     # If player fails to skip the floor, go back to the ability check
-                    return self.handle_ability_check(user_input, roll_result)
+                    return self.handle_ability_check(
+                        user_input, roll_result, output, verbose=verbose
+                    )
 
-        return self.go_to_next_floor()
+        return self.go_to_next_floor(output, verbose=verbose)
 
-    def go_to_next_floor(self):
+    def go_to_next_floor(
+        self, output: HandleUserInputRespond, verbose: bool = True
+    ) -> HandleUserInputEnd:
         #! TODO: Think about what information need to be sent back to DM
         self.end = True
-        print("Going to the next floor...")
+
+        if verbose:
+            print("Going to the next floor...")
+
+        return HandleUserInputEnd.load(output)
