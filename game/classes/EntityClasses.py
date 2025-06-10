@@ -111,8 +111,9 @@ class Player(Entity):
                 self.current_health = self.max_health
 
             if verbose:
-                print(f"(System): Health change: {health_change}. Current health: {self.current_health}/{self.max_health}")
-        
+                print(
+                    f"(System): Health change: {health_change}. Current health: {self.current_health}/{self.max_health}"
+                )
 
     def update_attribute(self, attribute: str, value: int):
         if hasattr(self, attribute):
@@ -130,10 +131,9 @@ class Player(Entity):
 
         else:
             raise AttributeError(f"{attribute} is not a valid attribute of Player")
-    
+
     def is_defeated(self) -> bool:
         return self.current_health <= 0
-    
 
 
 @dataclass

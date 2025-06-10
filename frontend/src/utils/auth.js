@@ -1,0 +1,47 @@
+import { jwtDecode } from "jwt-decode";
+import { REFRESH_TOKEN, ACCESS_TOKEN } from "../constants";
+import api from '../api';
+
+const refreshAccessToken = async () => {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN);
+  if (!refreshToken) return false;
+
+  try {
+    const response = await api.post('/api/token/refresh/', { refresh: refreshToken });
+    if (response.status === 200) {
+      const { access } = response.data;
+      localStorage.setItem(ACCESS_TOKEN, access);
+      return true;
+    }
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+  }
+  return false;
+};
+
+export const isAuthenticated = async () => {
+  const token = localStorage.getItem(ACCESS_TOKEN);
+  if (!token) return false;
+  
+  try {
+    const decoded = jwtDecode(token);
+    const now = Date.now() / 1000;
+    
+    // If token is expired, try to refresh it
+    if (decoded.exp < now) {
+      return await refreshAccessToken();
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return await refreshAccessToken(); // Try to refresh if token is invalid
+  }
+};
+
+export const logout = () => {
+  localStorage.removeItem(ACCESS_TOKEN);
+  localStorage.removeItem(REFRESH_TOKEN);
+  delete api.defaults.headers.common['Authorization'];
+  window.location.href = '/login';
+};

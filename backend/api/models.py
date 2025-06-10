@@ -27,7 +27,7 @@ class GameSession(models.Model):
     theme = models.CharField(
         max_length=255, blank=True, null=True
     )  # Theme of the game session
-    current_floor = models.IntegerField(default=1)  # Current floor in the game session
+    current_floor = models.IntegerField(default=0)  # Current floor in the game session
     game_state = models.CharField(
         max_length=25,
         choices=GameState.choices,
@@ -150,6 +150,7 @@ class FloorHistoryModel(models.Model):
         self.save()
 
 
+
 class NonCombatFloorTypeModel(models.TextChoices):
     TREASURE = "Treasure"
     TREASURE_WITH_TRAP = "Treasure with Trap"
@@ -187,7 +188,7 @@ class NonCombatFloorModel(models.Model):
         floor = NonCombatFloor(theme, player, ollama())
 
         # Load floor history
-        floor_history = self.floor_history_model.load_floor_history()
+        floor_history: FloorHistory = self.floor_history_model.load_floor_history()
 
         # Set class attributes
         floor.history = floor_history

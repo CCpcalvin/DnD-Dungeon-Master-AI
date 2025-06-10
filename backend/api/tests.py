@@ -1,7 +1,15 @@
+import os
+import django
+
+# Set up Django settings
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
+django.setup()
+
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.test import APITestCase
 
 from django.contrib.auth.models import User
+
 from .models import GameState, GameSession, GameEvent
 
 
@@ -32,7 +40,7 @@ class AuthUserGameSessionAPITest(APITestCase):
         # Check database state
         session = GameSession.objects.get(pk=session_id)
         self.assertEqual(session.user, self.user)
-        self.assertEqual(session.current_floor, 1)
+        self.assertEqual(session.current_floor, 0)
         self.assertEqual(session.game_state, GameState.PLAYER_CREATION)
 
         # Check GameEvent
@@ -47,6 +55,40 @@ class AuthUserGameSessionAPITest(APITestCase):
         # print("Narrative:", narrative)
 
         return session_id
+
+    def new_floor_setup(self, session_id, current_floor: int):
+        response = self.client.post(
+            f"/api/session/{session_id}/new-floor", {}, format="json"
+        )
+
+        # Check response status code
+        self.assertEqual(response.status_code, 200)
+
+        # Check response format
+        response_data = response.json()
+        self.assertIsInstance(response_data["narrative"], str)
+        self.assertIsInstance(response_data["suggested_actions"], list)
+
+        # Check the game state
+        session = GameSession.objects.get(pk=session_id)
+        session.refresh_from_db()
+        self.assertEqual(session.game_state, GameState.IN_PROGRESS)
+
+        # Check current floor
+        self.assertEqual(session.current_floor, current_floor + 1)
+
+        # print("Narrative:", response_data["narrative"])
+        # print("Suggested Actions:", response_data["suggested_actions"])
+
+        # Check NonCombatFloorModel
+        non_combat_floor_model = session.non_combat_floor_model
+
+        # Check FloorHistoryModel
+        floor_history_model = non_combat_floor_model.floor_history_model
+
+        self.assertEqual(len(floor_history_model.content), 1)
+
+        return response_data
 
     def test_create_player(self):
         """
@@ -74,17 +116,9 @@ class AuthUserGameSessionAPITest(APITestCase):
         # Check response status code
         self.assertEqual(response.status_code, 200)
 
-        # Check response format
-        response_data = response.json()
-        self.assertIsInstance(response_data["narrative"], str)
-        self.assertIsInstance(response_data["suggested_actions"], list)
-
-        # print("Narrative:", response_data["narrative"])
-        # print("Suggested Actions:", response_data["suggested_actions"])
-
         # Check database
         session = GameSession.objects.get(pk=session_id)
-        self.assertEqual(session.game_state, GameState.IN_PROGRESS)
+        self.assertEqual(session.game_state, GameState.WAITING_FOR_NEXT_FLOOR)
 
         # Check PlayerInfo
         player = session.player
@@ -101,7 +135,9 @@ class AuthUserGameSessionAPITest(APITestCase):
 
         # Check FloorHistoryModel
         floor_history_model = non_combat_floor_model.floor_history_model
-        self.assertEqual(len(floor_history_model.content), 1)
+        self.assertEqual(len(floor_history_model.content), 0)
+
+        self.new_floor_setup(session_id, 0)
 
     def test_create_player_error(self):
         # Get the session_id by calling create_player_setup
@@ -177,6 +213,149 @@ class AuthUserGameSessionAPITest(APITestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("error", response.json().keys())
+
+    def test_player_input(self):
+        # Set up the test environment by creating a session
+        session_id = self.create_player_setup()
+
+        # Create a player
+        response = self.client.post(
+            f"/api/session/{session_id}/create-player",
+            {
+                "player_name": "Test Player",
+                "strength": 8,
+                "dexterity": 6,
+                "constitution": 7,
+                "intelligence": 3,
+                "wisdom": 5,
+                "charisma": 1,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Initialize a new floor
+        response_data = self.new_floor_setup(session_id, 0)
+
+        # Assume the player use the first suggested action
+        suggested_actions = response_data["suggested_actions"]
+        player_action = suggested_actions[0]
+
+        # Run test for 10 actions
+        action_count = 0
+        total_action = 20
+
+        session = GameSession.objects.get(pk=session_id)
+        self.assertEqual(session.current_floor, 1)
+        current_floor = session.current_floor
+
+        while action_count < total_action:
+            # POST to player input
+            response = self.client.post(
+                f"/api/session/{session_id}/player-input",
+                {"action": player_action, "suggested_actions": suggested_actions},
+                format="json",
+            )
+            self.assertEqual(response.status_code, 200)
+
+            # Check the response format
+            response_data = response.json()
+            self.assertIsInstance(response_data["state"], str)
+            self.assertIsInstance(response_data["events"], list)
+
+            match response_data["state"]:
+                case "In Progress":
+                    # Continue the run
+                    self.assertIsInstance(response_data["suggested_actions"], list)
+                    suggested_actions = response_data["suggested_actions"]
+                    player_action = suggested_actions[0]
+
+                case "Waiting for Next Floor":
+                    # Test whether we can still send POST to player-input
+                    response = self.client.post(
+                        f"/api/session/{session_id}/player-input",
+                        {
+                            "action": player_action,
+                            "suggested_actions": suggested_actions,
+                        },
+                        format="json",
+                    )
+                    self.assertEqual(response.status_code, 400)
+
+                    # Start a new floor and continue the run
+                    response_data = self.new_floor_setup(session_id, current_floor)
+                    current_floor += 1
+
+                    suggested_actions = response_data["suggested_actions"]
+                    player_action = suggested_actions[0]
+
+                case "Completed":
+                    session = GameSession.objects.get(pk=session_id)
+                    self.assertEqual(session.game_state, GameState.COMPLETED)
+
+                    # Test whether we can still send POST to player-input
+                    response = self.client.post(
+                        f"/api/session/{session_id}/player-input",
+                        {
+                            "action": player_action,
+                            "suggested_actions": suggested_actions,
+                        },
+                        format="json",
+                    )
+                    self.assertEqual(response.status_code, 400)
+
+                    break
+
+                case _:
+                    self.fail("Unexpected state: " + response_data["state"])
+
+            action_count += 1
+
+    def test_invalid_player_input(self):
+        # Set up the test environment by creating a session
+        session_id = self.create_player_setup()
+
+        # Create a player
+        response = self.client.post(
+            f"/api/session/{session_id}/create-player",
+            {
+                "player_name": "Test Player",
+                "strength": 8,
+                "dexterity": 6,
+                "constitution": 7,
+                "intelligence": 3,
+                "wisdom": 5,
+                "charisma": 1,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Initialize a new floor
+        response_data = self.new_floor_setup(session_id, 0)
+        suggested_actions = response_data["suggested_actions"]
+
+        # Narrative inconsistency input
+        player_action = "I take out my RPG and shoot the monster."
+
+        # Test invalid player input
+        response = self.client.post(
+            f"/api/session/{session_id}/player-input",
+            {"action": player_action, "suggested_actions": suggested_actions},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+        # Input too short
+        player_action = "Short"
+
+        # Test invalid player input
+        response = self.client.post(
+            f"/api/session/{session_id}/player-input",
+            {"action": player_action, "suggested_actions": suggested_actions},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
 
 
 class NonAuthUserGameSessionAPITest(APITestCase):

@@ -29,7 +29,10 @@ SECRET_KEY = "django-insecure-%t(ch5mb(#47nq8k%&o2vqwfc#p=h)op8d4^iqruzb5gdncjac
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "testserver", 
+    "localhost"
+]
 
 from datetime import timedelta
 
@@ -73,7 +76,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5173"
 ]
 
 ROOT_URLCONF = "backend.urls"

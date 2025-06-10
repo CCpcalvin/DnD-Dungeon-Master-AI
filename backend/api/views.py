@@ -52,7 +52,6 @@ def new_session(request: HttpRequest):
     session = GameSession.objects.create(
         user=request.user,
         theme="Dungeon Adventure",
-        current_floor=1,
         game_state=GameState.PLAYER_CREATION,
     )
 
@@ -107,7 +106,7 @@ def create_player(request: HttpRequest, session_id: int):
         session: GameSession = GameSession.objects.get(pk=session_id)
 
     except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=400)
+        return JsonResponse({"error": "Session does not exist"}, status=404)
 
     if session.user != request.user:
         return JsonResponse({"error": "You do not own this session"}, status=403)
@@ -166,20 +165,45 @@ def create_player(request: HttpRequest, session_id: int):
     )
 
     # Set the game state to in progress
-    session.game_state = GameState.IN_PROGRESS
+    session.game_state = GameState.WAITING_FOR_NEXT_FLOOR
+    session.save()
+
+    # Return response
+    return HttpResponse(status=200)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def new_floor(request: HttpRequest, session_id: int):
+    try:
+        session: GameSession = GameSession.objects.get(pk=session_id)
+
+    except GameSession.DoesNotExist:
+        return JsonResponse({"error": "Session does not exist"}, status=404)
+
+    if session.user != request.user:
+        return JsonResponse({"error": "You do not own this session"}, status=403)
+
+    if session.game_state != GameState.WAITING_FOR_NEXT_FLOOR:
+        return JsonResponse(
+            {"error": "Cannot create new floor in this state"}, status=400
+        )
 
     # Load the DM
     dm = session.load_dm()
 
     # Now we start the floor
-    floor = dm.non_combat_floor
-    floor.generate_floor_type()
-    intro_response, narrative = floor.generate_floor_intro()
+    # Reload the floor and assign the new instance back to dm
+    dm.current_floor += 1
+    dm.non_combat_floor = dm.non_combat_floor.reload()
+    dm.non_combat_floor.generate_floor_type()
+    intro_response, narrative = dm.non_combat_floor.generate_floor_intro()
 
     # Save the GameEvent
     GameEvent.objects.create(session=session, role=Role.NARRATOR, content=narrative)
 
     # Now update everything
+    session.game_state = GameState.IN_PROGRESS
     session.save_dm(dm)
 
     # Return response
@@ -195,7 +219,7 @@ def player_input(request: HttpRequest, session_id: int):
         session: GameSession = GameSession.objects.get(pk=session_id)
 
     except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=402)
+        return JsonResponse({"error": "Session does not exist"}, status=404)
 
     if session.user != request.user:
         return JsonResponse({"error": "You do not own this session"}, status=403)
@@ -206,6 +230,7 @@ def player_input(request: HttpRequest, session_id: int):
     try:
         data = json.loads(request.body)
         action = data["action"]
+        suggested_actions = data["suggested_actions"]
 
     except:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
@@ -214,7 +239,9 @@ def player_input(request: HttpRequest, session_id: int):
     dm = session.load_dm()
 
     # Get the output from dm
-    output = dm.non_combat_floor.handle_user_input(action, verbose=False)
+    output = dm.non_combat_floor.handle_user_input(
+        action, suggested_actions, verbose=False
+    )
 
     # Check the output type
     if isinstance(output, HandleUserInputError):
@@ -239,15 +266,17 @@ def player_input(request: HttpRequest, session_id: int):
         session.save()
         return JsonResponse(
             {
+                "state": session.game_state,
                 "events": output.messages,
             }
         )
 
     elif isinstance(output, HandleUserInputDefeat):
-        session.game_state = GameState.DEFEATED
+        session.game_state = GameState.COMPLETED
         session.save()
         return JsonResponse(
             {
+                "state": session.game_state,
                 "events": output.messages,
             }
         )
@@ -255,7 +284,42 @@ def player_input(request: HttpRequest, session_id: int):
     else:
         return JsonResponse(
             {
+                "state": session.game_state,
                 "events": output.messages,
                 "suggested_actions": output.suggested_actions,
             }
         )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_player_info(request: HttpRequest, session_id: int):
+    try:
+        session: GameSession = GameSession.objects.get(pk=session_id)
+    except GameSession.DoesNotExist:
+        return JsonResponse({"error": "Session does not exist"}, status=404)
+
+    if session.user != request.user:
+        return JsonResponse({"error": "You do not own this session"}, status=403)
+
+    # Get the player info or return 404 if not found
+    try:
+        player_info = session.player
+    except PlayerInfo.DoesNotExist:
+        return JsonResponse({"error": "Player info not found"}, status=404)
+
+    # Create a dictionary with the player info
+    player_data = {
+        "player_name": player_info.player_name,
+        "description": player_info.description,
+        "current_health": player_info.current_health,
+        "max_health": player_info.max_health,
+        "strength": player_info.strength,
+        "dexterity": player_info.dexterity,
+        "constitution": player_info.constitution,
+        "intelligence": player_info.intelligence,
+        "wisdom": player_info.wisdom,
+        "charisma": player_info.charisma,
+    }
+
+    return JsonResponse({"player_info": player_data})

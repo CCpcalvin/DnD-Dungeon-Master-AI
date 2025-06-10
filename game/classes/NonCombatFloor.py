@@ -202,7 +202,12 @@ class NonCombatFloor:
         )
 
     def reload(self):
-        return NonCombatFloor(self.theme, self.player, self.provider)
+        # Create a new instance but preserve important state
+        new_floor = NonCombatFloor(self.theme, self.player, self.provider)
+        new_floor.penalty = 0
+        new_floor.progression = Progression(self.event_length)
+        new_floor.history = FloorHistory()
+        return new_floor
 
     def init_mock(self, mock: int):
         """
@@ -311,12 +316,12 @@ class NonCombatFloor:
             # If the user input is a part of the suggested action, handle it as an ability check directly
             if formatted_user_input in action.lower().strip():
                 output.add_message({"role": "Player", "content": user_input})
-                return self.handle_ability_check(user_input, output)
+                return self.handle_ability_check(user_input, output, verbose=verbose)
 
         # If the user input is "go to the next floor", skip the floor
         if formatted_user_input in "Go to the next floor.".lower().strip():
             output.add_message({"role": "Player", "content": user_input})
-            return self.skip_floor(user_input, output)
+            return self.skip_floor(user_input, output, verbose=verbose)
 
         #! TODO: Error handling
         classify_action_response = self.classify_action_request.send(user_input)
@@ -343,7 +348,7 @@ class NonCombatFloor:
 
         output.add_message({"role": "Player", "content": user_input})
         if classify_action_response.action_type == "ability_check":
-            return self.handle_ability_check(user_input, output)
+            return self.handle_ability_check(user_input, output, verbose=verbose)
 
         #! TODO: Not yet implemented
         elif classify_action_response.action_type == "use_item":
@@ -423,10 +428,6 @@ class NonCombatFloor:
             floor_type=self.floor_type,
         )
 
-        # Update the player's health
-        #! TODO: Check player health! We need special treatment when player is dead here
-        self.player.update_health(story_extend_response.health_change, verbose=verbose)
-
         # Add to the history
         self.history.add_player_actions(user_input, roll_result)
 
@@ -471,7 +472,7 @@ class NonCombatFloor:
         if item_use_resolution_response.is_item_consumed:
             self.player.inventory.pop(item_index)
 
-        return self.handle_resolution(item_use_resolution_response)
+        return self.handle_resolution(item_use_resolution_response, verbose=verbose)
 
     def handle_reward(
         self,
@@ -521,10 +522,32 @@ class NonCombatFloor:
         output: HandleUserInputRespond,
         verbose: bool = True,
     ) -> HandleUserInputRespond:
+
         # Print the story if in verbose mode
         output.add_message({"role": "Narrator", "content": response.narrative})
         if verbose:
             print(response.narrative)
+
+        # Update the player's health
+        #! TODO: Check player health! We need special treatment when player is dead here
+        self.player.update_health(response.health_change, verbose=verbose)
+
+        # Write to the output if we have health change
+        if response.health_change > 0:
+            output.add_message(
+                {
+                    "role": "System",
+                    "content": f"You are healed for {response.health_change} health.",
+                }
+            )
+
+        elif response.health_change < 0:
+            output.add_message(
+                {
+                    "role": "System",
+                    "content": f"You are damaged for {response.health_change} health.",
+                }
+            )
 
         # Add the user input and story extension to the history
         self.history.add_narrative(response.summary)
@@ -557,6 +580,7 @@ class NonCombatFloor:
                 output=output,
                 verbose=verbose,
             )
+
             return self.go_to_next_floor(output, verbose=verbose)
 
         else:
