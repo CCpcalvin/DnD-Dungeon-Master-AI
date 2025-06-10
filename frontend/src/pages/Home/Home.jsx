@@ -1,32 +1,23 @@
 import { useState, useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { isAuthenticated, logout } from '../../utils/auth';
+import { isAuthenticated } from '../../utils/auth';
+
 import '../../App.css';
 import styles from './Home.module.css';
 
+import TopBar from '../../components/TopBar';
+
 async function get_session_id() {
-  const res = await api.post('/session/new/');
+  const res = await api.post('/session/new');
   console.log('Response:', res);
   if (res.status === 200) {
     console.log('Session created successfully');
+    return res.data.session_id;
   } else {
     throw new Error('Failed to get session ID');
   }
-}
-
-function TopBar({ onLogout }) {
-  return (
-    <div className="w-full bg-gray-800 p-4 flex justify-between items-center">
-      <div className="text-white font-bold">DnD Dungeon Master AI</div>
-      <button
-        onClick={onLogout}
-        className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
-      >
-        Logout
-      </button>
-    </div>
-  );
 }
 
 function Home() {
@@ -34,24 +25,19 @@ function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
-      setIsLoggedIn(isAuthenticated());
+    const checkAuth = async () => {
+      setIsLoggedIn(await isAuthenticated());
     };
     checkAuth();
-    
+
     // Set up a storage event listener to detect token changes in other tabs
-    const handleStorageChange = () => checkAuth();
+    const handleStorageChange = checkAuth;
     window.addEventListener('storage', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
-
-  const handleLogout = () => {
-    logout();
-    setIsLoggedIn(false);
-  };
 
   const handleStartJourney = async () => {
     if (!isLoggedIn) {
@@ -67,25 +53,36 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {isLoggedIn && <TopBar onLogout={handleLogout} />}
-      
-      <div className="w-full flex items-center justify-center flex-col" style={{
-        minHeight: isLoggedIn ? 'calc(100vh - 4rem)' : '100vh',
-        paddingTop: isLoggedIn ? '0' : '0'
-      }}>
+    <div className={`${styles.align_center} min-h-screen bg-gray-900 w-full max-w-7xl mx-auto`}>
+      {isLoggedIn && (
+        <TopBar>
+          <div className="text-white font-bold">DnD Dungeon Master AI</div>
+          <button
+            onClick={() => navigate('/logout')}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
+          >
+            Logout
+          </button>
+        </TopBar>
+      )}
+
+      <div className="w-full flex items-center justify-center flex-col"
+        style={{
+          minHeight: isLoggedIn ? 'calc(100vh - 4rem)' : '100vh',
+        }}
+      >
         <h1 className={`text-2xl text-red-400 mb-4 text-center tracking-widest drop-shadow-lg font-UnifrakturCook ${styles.h1}`}>
           How high can you climb?
         </h1>
-        <div className="flex w-full justify-between max-w-md mt-4">
+        <div className="flex w-full justify-center max-w-md mt-4 gap-20">
           <button
             className="bg-green-800 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
             onClick={handleStartJourney}
           >
-            {isLoggedIn ? 'Start Your Adventure' : 'Start your journey'}
+            Start Your Adventure
           </button>
           {!isLoggedIn && (
-            <button 
+            <button
               className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
               onClick={() => navigate('/login')}
             >

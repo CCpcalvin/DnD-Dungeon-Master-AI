@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode";
-import { REFRESH_TOKEN, ACCESS_TOKEN } from "../constants";
 import api from '../api';
+
+import { REFRESH_TOKEN, ACCESS_TOKEN } from "../constants";
 
 const refreshAccessToken = async () => {
   const refreshToken = localStorage.getItem(REFRESH_TOKEN);
@@ -43,5 +44,4 @@ export const logout = () => {
   localStorage.removeItem(ACCESS_TOKEN);
   localStorage.removeItem(REFRESH_TOKEN);
   delete api.defaults.headers.common['Authorization'];
-  window.location.href = '/login';
 };
