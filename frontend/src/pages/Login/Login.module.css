@@ -1,59 +1,67 @@
 .container {
-    border-radius: 10px;
-    background-color: #1e1f2e;
-    border: 2px solid #8e6565;
-    padding: 20px;
-    width: 300px;
+    border-radius: 0.5rem;
+    background-color: #1e2938;
+    padding: 2rem;
+    width: 100%;
+    max-width: 28rem; /* 448px */
     text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin: 2rem auto;
 }
 
 .container h2 {
-    font-size: 24px;
-    margin-bottom: 20px;
-    color: #d4af37;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #ffffff;
+    font-weight: 600;
 }
 
 .inputField {
     width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #8e6565;
-    border-radius: 5px;
-    background-color: #222222;
-    color: #c0c0c0;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    border: 1px solid #4B5563; /* gray-600 */
+    border-radius: 0.375rem;
+    background-color: #111827; /* gray-900 */
+    color: #F3F4F6; /* gray-100 */
+}
+
+.inputField:focus {
+    outline: none;
+    border-color: #10B981; /* emerald-500 */
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
 .submitButton {
-    background-color: #610a0a;
-    color: #d4af37;
-    padding: 10px 20px;
+    background-color: #10B981; /* emerald-600 */
+    color: white;
+    padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 5px;
+    border-radius: 0.375rem;
     cursor: pointer;
-    margin-top: 10px;
-    font-weight: bold;
+    margin-top: 1rem;
+    font-weight: 600;
+    width: 100%;
+    transition: background-color 0.2s;
 }
 
 .submitButton:hover {
-    background-color: #510909;
+    background-color: #059669; /* emerald-700 */
 }
 
 .smallText {
-    color: #d4af37;
+    color: #9CA3AF; /* gray-400 */
     display: block;
+    margin-top: 1rem;
 }
 
-.smallTestLink {
-    color: #d4af37;
+.link {
+    color: #60A5FA; /* blue-400 */
     margin-left: 5px;
     text-decoration: none;
+    transition: text-decoration 0.2s;
 }
 
-.smallTestLink:hover {
+.link:hover {
     text-decoration: underline;
 }

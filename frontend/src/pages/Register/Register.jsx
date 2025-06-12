@@ -7,6 +7,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import styles from './Register.module.css';
 
 import TopBar from '../../components/TopBar';
+import HomeButton from '../../components/HomeButton';
+import Container from '../../components/Container';
 
 function Register() {
   const [username, setUsername] = useState('');
@@ -30,42 +32,39 @@ function Register() {
   return (
     <div>
       <TopBar>
-        <button
-          onClick={() => navigate('/')}
-          className="bg-green-800 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Home
-        </button>
+        <HomeButton />
       </TopBar>
 
-      <div className={styles.container}>
-        <h2>Create Account</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Username"
-            className={styles.inputField}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className={styles.inputField}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <small className={styles.smallText}>
-            Already have an account?
-            <Link to="/login" className={styles.smallTestLink}>Login here</Link>
-          </small>
-          <button type="submit" className={styles.submitButton}>
-            Register
-          </button>
-        </form>
-      </div>
+      <Container>
+        <div className={styles.container}>
+          <h2>Create Account</h2>
+          <form onSubmit={handleSubmit}>
+            <input
+              type="text"
+              placeholder="Username"
+              className={styles.inputField}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              className={styles.inputField}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <small className={styles.smallText}>
+              Already have an account?
+              <Link to="/login" className={styles.link}>Login here</Link>
+            </small>
+            <button type="submit" className={styles.submitButton}>
+              Register
+            </button>
+          </form>
+        </div>
+      </Container>
     </div>
   );
 }

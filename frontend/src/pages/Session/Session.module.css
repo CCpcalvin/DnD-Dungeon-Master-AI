@@ -1,0 +1,30 @@
+.chatHistory {
+    flex: 1 1 0%;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    padding-right: 0.5rem;
+}
+
+.chatHistory::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chatHistory::-webkit-scrollbar-track {
+    background: #2d3748;
+    border-radius: 4px;
+}
+
+.chatHistory::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 4px;
+}
+
+.chatHistory::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+}
+
+/* For Firefox */
+.chatHistory {
+    scrollbar-width: thin;
+    scrollbar-color: #4a5568 #2d3748;
+}

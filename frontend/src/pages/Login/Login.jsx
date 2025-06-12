@@ -8,7 +8,8 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from '../../constants';
 import styles from './Login.module.css';
 
 import TopBar from '../../components/TopBar';
-
+import HomeButton from '../../components/HomeButton';
+import Container from '../../components/Container';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -54,43 +55,40 @@ function Login() {
   return (
     <div>
       <TopBar>
-        <button
-          onClick={() => navigate('/')}
-          className="text-white hover:text-gray-300 flex items-center"
-        >
-          Home
-        </button>
+        <HomeButton />
       </TopBar>
-      <div className={styles.container}>
-        <h2>Login</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Username"
-            className={styles.inputField}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className={styles.inputField}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <small className={styles.smallText}>
-            Don't have an account?
-            <Link to="/register" className={styles.smallTestLink}>Register here</Link>
-          </small>
-          <button type="submit" className={styles.submitButton}>
-            Login
-          </button>
-        </form>
-      </div>
 
+      <Container>
+        <div className={styles.container}>
+          <h2>Login</h2>
+          <form onSubmit={handleSubmit}>
+            <input
+              type="text"
+              placeholder="Username"
+              className={styles.inputField}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              className={styles.inputField}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <small className={styles.smallText}>
+              Don't have an account?
+              <Link to="/register" className={styles.link}>Register here</Link>
+            </small>
+            <button type="submit" className={styles.submitButton}>
+              Login
+            </button>
+          </form>
+        </div>
+      </Container>
     </div>
   );
 }

@@ -1,10 +1,13 @@
 import React from 'react';
+import Container from './Container';
 
 function TopBar({ children }) {
   return (
-    <div className="w-full bg-gray-800 p-4 flex justify-between items-center">
-      {children}
-    </div>
+    <Container>
+      <div className="w-full bg-gray-800 p-4 flex justify-between items-center rounded-lg mt-4">
+        {children}
+      </div>
+    </Container>
   );
 }
 

@@ -47,129 +47,123 @@ class CreateUserView(generics.CreateAPIView):
 # TODO: Handle non-authenticated user
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def new_session(request: HttpRequest):
-    # Create the session first
-    session = GameSession.objects.create(
-        user=request.user,
-        theme="Dungeon Adventure",
-        game_state=GameState.PLAYER_CREATION,
-    )
-
-    # Once the user start game, we will first init the DM
-    dm = DungeonMaster(provider=ollama())
-
-    # Generate theme, player backstory and player motivation
-    background_response = dm.generate_theme()
-
-    # Combine all the strings
-    # We will send this strings as JSON to the frontend
-    combined_content = (
-        f"{background_response.theme} "
-        f"{background_response.player_backstory} "
-        f"{background_response.player_motivation} "
-    )
-
-    # Save to GameEvent for storage
-    GameEvent.objects.create(
-        session=session, role=Role.NARRATOR, content=combined_content
-    )
-
-    # Now we condense the story
-    condensed_response = dm.condense_theme(
-        theme=background_response.theme,
-        player_backstory=background_response.player_backstory,
-    )
-
-    # Save the condensed theme to the session
-    session.theme = condensed_response.theme
-
-    # Create a player
-    PlayerInfo.objects.create(
-        session=session,
-        description=condensed_response.player_backstory,
-    )
-
-    # Return information about the game
-    return JsonResponse({"session_id": session.pk, "narrative": combined_content})
-
-
-# TODO: Handle non-authenticated user
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def create_player(request: HttpRequest, session_id: int):
-    """
-    Create a player for the session.
-
-    This view should be called after the AI generates the theme and player backstory.
-    """
+def create_game(request: HttpRequest):
     try:
-        session: GameSession = GameSession.objects.get(pk=session_id)
-
-    except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=404)
-
-    if session.user != request.user:
-        return JsonResponse({"error": "You do not own this session"}, status=403)
-
-    if session.game_state != GameState.PLAYER_CREATION:
-        return JsonResponse({"error": "Cannot create player in this state"}, status=400)
-
-    try:
+        # Parse request data
         data = json.loads(request.body)
-        player_name = data["player_name"]
-        strength = data["strength"]
-        dexterity = data["dexterity"]
-        constitution = data["constitution"]
-        intelligence = data["intelligence"]
-        wisdom = data["wisdom"]
-        charisma = data["charisma"]
 
-    except:
+        if not isinstance(data, dict):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        # Validate required fields
+        required_fields = [
+            "player_name",
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma",
+        ]
+
+        if not all(field in data for field in required_fields):
+            return JsonResponse({"error": "Missing required fields"}, status=400)
+
+        try:
+            player_name = str(data["player_name"])
+            strength = int(data["strength"])
+            dexterity = int(data["dexterity"])
+            constitution = int(data["constitution"])
+            intelligence = int(data["intelligence"])
+            wisdom = int(data["wisdom"])
+            charisma = int(data["charisma"])
+
+        except (ValueError, TypeError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        # Validate attributes
+        attributes = [strength, dexterity, constitution, intelligence, wisdom, charisma]
+        if sum(attributes) > Player.start_attribute_sum:
+            return JsonResponse(
+                {"error": f"Stats sum to more than {Player.start_attribute_sum}"},
+                status=400,
+            )
+
+        if any(attr < Player.min_per_attr for attr in attributes):
+            return JsonResponse(
+                {"error": f"Stats must be at least {Player.min_per_attr}"}, status=400
+            )
+
+        if any(attr > Player.max_per_attr for attr in attributes):
+            return JsonResponse(
+                {"error": f"Stats must be at most {Player.max_per_attr}"}, status=400
+            )
+
+        # Create the session
+        session = GameSession.objects.create(
+            user=request.user,
+            theme="Dungeon Adventure",  # This will be updated by the LLM
+            game_state=GameState.WAITING_FOR_NEXT_FLOOR,
+        )
+
+        # Initialize DM and generate theme
+        dm = DungeonMaster(provider=ollama())
+        background_response = dm.generate_theme()
+        condensed_response = dm.condense_theme(
+            theme=background_response.theme,
+            player_backstory=background_response.player_backstory,
+        )
+
+        # Update session with theme
+        session.theme = condensed_response.theme
+        session.save()
+
+        # Create GameEvent for the narrative
+        combined_content = (
+            f"{background_response.theme} "
+            f"{background_response.player_backstory} "
+            f"{background_response.player_motivation}"
+        )
+        GameEvent.objects.create(
+            session=session, role=Role.NARRATOR, content=combined_content
+        )
+
+        # Create player with all attributes
+        PlayerInfo.objects.create(
+            session=session,
+            player_name=player_name,
+            description=condensed_response.player_backstory,
+            strength=strength,
+            dexterity=dexterity,
+            constitution=constitution,
+            intelligence=intelligence,
+            wisdom=wisdom,
+            charisma=charisma,
+            current_health=Player.start_health,
+            max_health=Player.start_health,
+        )
+
+        # Initialize game objects
+        floor_history_model = FloorHistoryModel.objects.create(
+            session=session, content=[]
+        )
+        NonCombatFloorModel.objects.create(
+            session=session, floor_history_model=floor_history_model
+        )
+
+        return JsonResponse(
+            {
+                "session_id": session.pk,
+                "narrative": combined_content,
+                "state": session.game_state,
+            }
+        )
+
+    except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    # Server-validation
-    attributes = [strength, dexterity, constitution, intelligence, wisdom, charisma]
-    if sum(attributes) > Player.start_attribute_sum:
-        return JsonResponse(
-            {"error": f"Stats sum to more than {Player.start_attribute_sum}"},
-            status=400,
-        )
-
-    if any(attr < Player.min_per_attr for attr in attributes):
-        return JsonResponse(
-            {"error": f"Stats must be at least {Player.min_per_attr}"}, status=400
-        )
-
-    if any(attr > Player.max_per_attr for attr in attributes):
-        return JsonResponse(
-            {"error": f"Stats must be at most {Player.max_per_attr}"}, status=400
-        )
-
-    # Get the player from the session
-    player = session.player
-
-    # Update the state
-    player.player_name = player_name
-    player.strength = strength
-    player.dexterity = dexterity
-    player.constitution = constitution
-    player.intelligence = intelligence
-    player.wisdom = wisdom
-    player.charisma = charisma
-    player.save()
-
-    # Now we create necessary object for the game
-    floor_history_model = FloorHistoryModel.objects.create(session=session, content=[])
-    NonCombatFloorModel.objects.create(
-        session=session, floor_history_model=floor_history_model
-    )
-
-    # Set the game state to in progress
-    session.game_state = GameState.WAITING_FOR_NEXT_FLOOR
-    session.save()
-
-    # Return response
-    return HttpResponse(status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @api_view(["POST"])
@@ -208,7 +202,11 @@ def new_floor(request: HttpRequest, session_id: int):
 
     # Return response
     return JsonResponse(
-        {"narrative": narrative, "suggested_actions": intro_response.suggested_actions}
+        {
+            "narrative": narrative,
+            "suggested_actions": intro_response.suggested_actions,
+            "state": session.game_state,
+        }
     )
 
 
@@ -323,3 +321,59 @@ def get_player_info(request: HttpRequest, session_id: int):
     }
 
     return JsonResponse({"player_info": player_data})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_sessions(request: HttpRequest):
+    sessions = GameSession.objects.filter(user=request.user).select_related("player")
+
+    data = [
+        {
+            "id": session.id,
+            "player_name": session.player.player_name if session.player else None,
+            "theme": session.theme,
+            "current_floor": session.current_floor,
+            "game_state": session.game_state,
+        }
+        for session in sessions
+    ]
+
+    return JsonResponse({"sessions": data})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_events(request: HttpRequest, session_id: int):
+    try:
+        session: GameSession = GameSession.objects.get(pk=session_id)
+    except GameSession.DoesNotExist:
+        return JsonResponse({"error": "Session does not exist"}, status=404)
+
+    if session.user != request.user:
+        return JsonResponse({"error": "You do not own this session"}, status=403)
+
+    events = GameEvent.objects.filter(session=session).order_by("created_at")
+    data = [
+        {
+            "role": event.role,
+            "content": event.content,
+        }
+        for event in events
+    ]
+
+    return JsonResponse({"events": data, "state": session.game_state})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_game_state(request: HttpRequest, session_id: int):
+    try:
+        session: GameSession = GameSession.objects.get(pk=session_id)
+    except GameSession.DoesNotExist:
+        return JsonResponse({"error": "Session does not exist"}, status=404)
+
+    if session.user != request.user:
+        return JsonResponse({"error": "You do not own this session"}, status=403)
+
+    return JsonResponse({"state": session.game_state})
