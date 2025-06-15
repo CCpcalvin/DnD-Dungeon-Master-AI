@@ -44,7 +44,6 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 
-# TODO: Handle non-authenticated user
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_game(request: HttpRequest):

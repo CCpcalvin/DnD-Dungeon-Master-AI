@@ -3,6 +3,13 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /home/backend/app
 
+# Install `curl` and `ps`
+RUN apt-get update && \
+    apt-get install -y \
+    curl \ 
+    procps \ 
+    && rm -rf /var/lib/apt/lists/*
+
 # Create a non-root user and switch to it
 RUN useradd -m backend && \
     mkdir -p /home/backend/app && \
