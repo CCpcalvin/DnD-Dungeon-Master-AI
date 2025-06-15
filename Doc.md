@@ -364,3 +364,27 @@ The reason not to use it is that
     - More specifically, we cannot identity these two by looking about the confidence score
 
 
+---
+12th June
+---
+- TODO: Modify the `FloorHistoryModel` such that we can save the suggested action as well
+  - Think about the data structure
+  - In my mind, we just store it in JSON, somethings like 
+    ```json
+    {
+      "role": "Narrator",
+      "message": "The player is going to attack the enemy",
+      "suggested_actions": ["go_to_next_floor", "use_item", "ability_check"],
+    }
+    ``` 
+    sometimes we don't have suggested_actions, then we may store it like
+    ```json
+    {
+      "role": "Narrator",
+      "message": "The player is going to attack the enemy",
+    }
+    ```
+
+  - Somehow find a way to update the old data to the new data format
+
+

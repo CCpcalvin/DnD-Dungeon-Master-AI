@@ -10,7 +10,7 @@ from rest_framework.test import APITestCase
 
 from django.contrib.auth.models import User
 
-from .models import GameState, GameSession, GameEvent
+from .models import GameState, GameSession
 
 
 # Create your tests here.
@@ -73,7 +73,7 @@ class AuthUserGameSessionAPITest(APITestCase):
         session = GameSession.objects.get(pk=session_id)
         self.assertEqual(session.user, self.user)
         self.assertEqual(session.game_state, GameState.WAITING_FOR_NEXT_FLOOR)
-        self.assertTrue(hasattr(session, 'player'))
+        self.assertTrue(hasattr(session, "player"))
 
         # Check PlayerInfo
         player = session.player
@@ -161,7 +161,7 @@ class AuthUserGameSessionAPITest(APITestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("error", response.json().keys())
-    
+
     def test_new_floor(self):
         session_id = self.create_game_setup()
 
@@ -181,7 +181,6 @@ class AuthUserGameSessionAPITest(APITestCase):
         self.assertEqual(session.game_state, GameState.IN_PROGRESS)
         self.assertEqual(session.current_floor, 1)
 
-    
     def new_floor_setup(self, session_id):
         response = self.client.post(
             f"/api/session/{session_id}/new-floor", {}, format="json"
@@ -289,6 +288,11 @@ class AuthUserGameSessionAPITest(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
+        response_data = response.json()
+        self.assertEqual(
+            response_data["error"],
+            "Your action is not consistent with the narrative. Please re-input your action.",
+        )
 
         # Input too short
         player_action = "Short"
@@ -300,6 +304,11 @@ class AuthUserGameSessionAPITest(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
+        response_data = response.json()
+        self.assertEqual(
+            response_data["error"],
+            "Your action is too short. Please re-input your action with more details.",
+        )
 
 
 class NonAuthUserGameSessionAPITest(APITestCase):

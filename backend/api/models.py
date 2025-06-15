@@ -76,6 +76,7 @@ class GameEvent(models.Model):
     )
     role = models.CharField(max_length=20, choices=Role.choices)
     content = models.TextField()  # The story segment
+    suggested_actions = models.JSONField(default=list, blank=True)  # List of suggested actions
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -195,6 +196,9 @@ class NonCombatFloorModel(models.Model):
         floor.floor_type = NonCombatFloorType(self.floor_type)
         floor.penalty = self.penalty
         floor.progression = Progression.load(self.completion_rate, floor.event_length)
+
+        # Set the floor.end to False
+        floor.end = False
 
         return floor
 

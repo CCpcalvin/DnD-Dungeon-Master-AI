@@ -30,25 +30,24 @@ function Home() {
   }, []);
 
   return (
-    <div className={`${styles.align_center} min-h-screen bg-gray-900 w-full mx-auto`}>
+    <div className="flex flex-col min-h-screen bg-gray-900 w-full">
       {isLoggedIn && (
-        <TopBar>
-          <Link
-            to="/my-sessions"
-            className="text-white hover:text-gray-300 font-bold"
-          >
-            Continue Your Journey
-          </Link>
-          <LogoutButton />
-        </TopBar>
+        <div className="flex-shrink-0">
+          <TopBar>
+            <Link
+              to="/my-sessions"
+              className="text-white hover:text-gray-300 font-bold"
+            >
+              Continue Your Journey
+            </Link>
+            <LogoutButton />
+          </TopBar>
+        </div>
       )}
 
-      <Container>
-        <div className="w-full flex items-center justify-center flex-col"
-          style={{
-            minHeight: isLoggedIn ? 'calc(100vh - 4rem)' : '100vh',
-          }}
-        >
+      <div className="flex-grow flex items-center">
+        <Container>
+          <div className="w-full flex items-center justify-center flex-col py-8">
           <h1 className={`text-2xl text-red-400 mb-4 text-center tracking-widest drop-shadow-lg font-UnifrakturCook ${styles.h1}`}>
             How high can you climb?
           </h1>
@@ -68,8 +67,9 @@ function Home() {
               </button>
             )}
           </div>
-        </div>
-      </Container>
+          </div>
+        </Container>
+      </div>
     </div>
   );
 }

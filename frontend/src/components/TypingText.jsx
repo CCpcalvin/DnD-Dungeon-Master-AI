@@ -1,10 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-
-export const Roles = {
-  PLAYER: "Player",
-  NARRATOR: "Narrator",
-  ASSISTANT: "Assistant",
-};
+import { Roles } from "../constants";
 
 const TypingText = ({
   text,

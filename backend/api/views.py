@@ -194,7 +194,12 @@ def new_floor(request: HttpRequest, session_id: int):
     intro_response, narrative = dm.non_combat_floor.generate_floor_intro()
 
     # Save the GameEvent
-    GameEvent.objects.create(session=session, role=Role.NARRATOR, content=narrative)
+    GameEvent.objects.create(
+        session=session,
+        role=Role.NARRATOR,
+        content=narrative,
+        suggested_actions=intro_response.suggested_actions,
+    )
 
     # Now update everything
     session.game_state = GameState.IN_PROGRESS
@@ -248,12 +253,21 @@ def player_input(request: HttpRequest, session_id: int):
     session.game_state = GameState.IN_PROGRESS
 
     # Save the GameEvents
+    game_events = []
     for message in output.messages:
-        GameEvent.objects.create(
+        game_event = GameEvent(
             session=session,
             role=Role(message["role"]),
             content=message["content"],
         )
+
+        game_events.append(game_event)
+
+    if isinstance(output, HandleUserInputSuggestedAction):
+        game_events[-1].suggested_actions = output.suggested_actions
+
+    # Bulk create all game events
+    GameEvent.objects.bulk_create(game_events)
 
     # Save the dm
     session.save_dm(dm)
@@ -291,9 +305,10 @@ def player_input(request: HttpRequest, session_id: int):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def get_player_info(request: HttpRequest, session_id: int):
+def get_session_info(request: HttpRequest, session_id: int):
     try:
         session: GameSession = GameSession.objects.get(pk=session_id)
+
     except GameSession.DoesNotExist:
         return JsonResponse({"error": "Session does not exist"}, status=404)
 
@@ -303,6 +318,7 @@ def get_player_info(request: HttpRequest, session_id: int):
     # Get the player info or return 404 if not found
     try:
         player_info = session.player
+
     except PlayerInfo.DoesNotExist:
         return JsonResponse({"error": "Player info not found"}, status=404)
 
@@ -320,7 +336,13 @@ def get_player_info(request: HttpRequest, session_id: int):
         "charisma": player_info.charisma,
     }
 
-    return JsonResponse({"player_info": player_data})
+    # Create a dictionary with session info
+    session_data = {
+        "theme": session.theme,
+        "current_floor": session.current_floor,
+    }
+
+    return JsonResponse({"player_info": player_data, "session_info": session_data})
 
 
 @api_view(["GET"])
@@ -354,13 +376,16 @@ def get_events(request: HttpRequest, session_id: int):
         return JsonResponse({"error": "You do not own this session"}, status=403)
 
     events = GameEvent.objects.filter(session=session).order_by("created_at")
-    data = [
-        {
+    data = []
+    for event in events:
+        event_data = {
             "role": event.role,
             "content": event.content,
         }
-        for event in events
-    ]
+        if event.suggested_actions:  # Only include if not empty
+            event_data["suggested_actions"] = event.suggested_actions
+
+        data.append(event_data)
 
     return JsonResponse({"events": data, "state": session.game_state})
 

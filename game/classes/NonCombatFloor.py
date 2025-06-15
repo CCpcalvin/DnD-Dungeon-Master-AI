@@ -74,7 +74,7 @@ class HandleUserInputError(HandleUserInputRespond):
 
     @classmethod
     def load(cls, response: HandleUserInputRespond, error_message: str):
-        return cls(response.messages, error_message)
+        return cls(error_message, response.messages)
 
 
 class HandleUserInputEnd(HandleUserInputRespond):
@@ -82,6 +82,13 @@ class HandleUserInputEnd(HandleUserInputRespond):
 
     @classmethod
     def load(cls, response: HandleUserInputRespond):
+        # Add a message to the response
+        response.add_message(
+            {
+                "role": "Narrator",
+                "content": "The floor ends. You move to the next floor.",
+            }
+        )
         return cls(response.messages)
 
 
@@ -333,7 +340,7 @@ class NonCombatFloor:
                 )
             return HandleUserInputError.load(
                 output,
-                "Your action is not consistent with the narrative. Please re-input your action",
+                "Your action is not consistent with the narrative. Please re-input your action.",
             )
 
         if classify_action_response.action_type == "unknown":
@@ -563,6 +570,7 @@ class NonCombatFloor:
         if self.progression.is_failed():
             if verbose:
                 print("(System): The event is ended with failure.")
+
             return self.go_to_next_floor(output, verbose=verbose)
 
         elif self.progression.is_completed():

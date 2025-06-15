@@ -1,205 +1,340 @@
 import { useState, useEffect, useReducer, useRef, useCallback } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import api from "../../api";
 
 import styles from "./Session.module.css";
 
 import TopBar from "../../components/TopBar";
 import HomeButton from "../../components/HomeButton";
 import LogoutButton from "../../components/LogoutButton";
+import { TypeAnimation } from "react-type-animation";
 
-import TypingText, { Roles } from "../../components/TypingText";
+import { Roles } from "../../constants";
+import SidePanel from "../../components/SidePanel";
 
-export const GameState = {
-  IN_PROGRESS: "In Progress",
-  WAITING_FOR_NEXT_FLOOR: "Waiting for Next Floor",
-  COMPLETED: "Completed",
-};
+import {
+  LoadingIndicator,
+  InputArea,
+  ChatMessage,
+  ContinuePrompt,
+} from "./SessionUI";
 
-// Define our state machine states
-export const SessionState = {
-  TYPING: 'typing',
-  AWAIT_CONTINUE: 'awaitContinue',
-  AWAIT_INPUT: 'awaitInput',
-  COMPLETE: 'complete'
-};
+import {
+  sessionReducer,
+  initialState,
+  ActionTypes,
+  SessionState,
+  GameState,
+} from "./sessionMachine";
 
-// State machine reducer
-function sessionReducer(state, action) {
-  switch (action.type) {
-    case 'START_TYPING':
-      return { ...state, currentState: SessionState.TYPING, typingMessage: action.message };
+const MessageDelay = 500;
+const TypingSpeed = 65;
 
-    case 'SKIP_TYPING':
-      return { ...state, skipTyping: true };
+function Session({ api, params = {}, ...props }) {
+  // State for sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    case 'TYPING_COMPLETE':
-      const nextState = { ...state, typingMessage: null, skipTyping: false };
+  // Get the session ID from the params or props
+  const paramsFromRoute = useParams();
+  const sessionId = params.sessionId || paramsFromRoute.sessionId;
 
-      // Determine next state based on game state
-      if (state.gameState === GameState.WAITING_FOR_NEXT_FLOOR) {
-        nextState.currentState = SessionState.AWAIT_CONTINUE;
-      } else if (state.gameState === GameState.IN_PROGRESS) {
-        nextState.currentState = SessionState.AWAIT_INPUT;
-      } else {
-        nextState.currentState = SessionState.COMPLETE;
-      }
-      return nextState;
-
-    case 'CONTINUE_PRESSED':
-      return { ...state, currentState: SessionState.AWAIT_INPUT };
-
-    case 'SET_GAME_STATE':
-      return { ...state, gameState: action.gameState };
-
-    case 'SET_LOADING':
-      return { ...state, isLoading: action.isLoading };
-
-    case 'ADD_MESSAGE':
-      return { ...state, oldMessages: [...state.oldMessages, action.message] };
-
-    default:
-      return state;
-  }
-}
-
-// Initial state for our reducer
-const initialState = {
-  currentState: SessionState.TYPING,
-  gameState: null,
-  isLoading: true,
-  oldMessages: [],
-  typingMessage: null,
-  skipTyping: false
-};
-
-function Session() {
-  const { sessionId } = useParams();
+  // Get the initial narrative from the props or location
   const location = useLocation();
+  const initialNarrative =
+    props.initialNarrative || location.state?.initialNarrative;
+
   const navigate = useNavigate();
   const hasInitialized = useRef(false);
+  const inputRef = useRef(null);
 
+  // For player input
   const [message, setMessage] = useState("");
-  
+
+  // For suggested_action submission
+  const [lastSuggestedActions, setLastSuggestedActions] = useState([]);
+
+  // Error state
+  const [error, setError] = useState(null);
+
+  // Clear error when message changes
+  useEffect(() => {
+    if (error) {
+      setError(null);
+    }
+  }, [message]);
+
   // Use reducer for state management
   const [state, dispatch] = useReducer(sessionReducer, initialState);
-  const { currentState, isLoading, oldMessages, typingMessage, skipTyping } = state;
-  
-  // Memoized handler for typing completion
-  const handleTypingComplete = useCallback(() => {
-    if (typingMessage) {
-      dispatch({ type: 'ADD_MESSAGE', message: typingMessage });
-      dispatch({ type: 'TYPING_COMPLETE' });
+  const { currentState, isInitializing, oldMessages, typingMessage } = state;
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll to bottom when messages or state changes
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [typingMessage]);
+  }, [oldMessages, currentState]);
+
+  // Handle typing completion
+  const handleTypingComplete = useCallback(() => {
+    if (state.typingMessage) {
+      dispatch({ type: ActionTypes.TYPING_COMPLETE });
+    }
+  }, [state.typingMessage]);
+
+  const handleContinue = async () => {
+    if (currentState === SessionState.AWAIT_CONTINUE) {
+      // Enter the loading state
+      dispatch({ type: ActionTypes.SET_LOADING });
+
+      // API call to get the next floor
+      try {
+        const response = await api.post(`/session/${sessionId}/new-floor`);
+        const { narrative, suggested_actions } = response.data;
+
+        dispatch({
+          type: ActionTypes.START_TYPING,
+          message: {
+            role: Roles.NARRATOR,
+            content: narrative,
+            suggested_actions: suggested_actions,
+          },
+        });
+
+        dispatch({
+          type: ActionTypes.SET_GAME_STATE,
+          gameState: GameState.IN_PROGRESS,
+        });
+
+        setLastSuggestedActions(suggested_actions);
+      } catch (error) {
+        console.error("Error getting next floor:", error);
+        alert(
+          `Failed to get next floor: ${
+            error.response?.data?.message || error.message
+          }`
+        );
+        navigate("/");
+        return;
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // If currently typing, skip the typing animation
     if (currentState === SessionState.TYPING) {
-      dispatch({ type: 'SKIP_TYPING' });
+      handleTypingComplete();
+      return;
+    }
+
+    // If currently in AWAIT_CONTINUE state, behavior like clicking the continue button
+    if (currentState === SessionState.AWAIT_CONTINUE) {
+      handleContinue();
       return;
     }
 
     // If not in AWAIT_INPUT state, ignore the submission
-    if (currentState !== SessionState.AWAIT_INPUT) return;
+    if (currentState !== SessionState.AWAIT_INPUT) {
+      console.error("Invalid state for submission");
+      return;
+    }
 
+    // Simple client side validation
     const trimmedMessage = message.trim();
-    if (!trimmedMessage) return;
-
-    // Add user message to messages
-    const userMessage = { role: Roles.PLAYER, content: trimmedMessage };
-    dispatch({ type: 'ADD_MESSAGE', message: userMessage });
-    setMessage("");
-
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-      const aiResponse = {
-        role: Roles.NARRATOR,
-        content: "This is a simulated AI response. In a real app, this would come from your backend.",
-      };
-      dispatch({ type: 'START_TYPING', message: aiResponse });
-    }, 500);
+    if (!trimmedMessage) {
+      setMessage("");
+      return;
+    }
 
     try {
-      // TODO: Send message to server
-      // const response = await api.post(`/session/${sessionId}/message`, {
-      //   message: trimmedMessage
-      // });
-      // if (response.data.response) {
-      //   const aiResponse = {
-      //     role: Roles.NARRATOR,
-      //     content: response.data.response
-      //   };
-      //   dispatch({ type: 'START_TYPING', message: aiResponse });
-      // }
+      // Set to loading state
+      dispatch({ type: ActionTypes.SET_LOADING });
+
+      // Submit POST request to server
+      const response = await api.post(`/session/${sessionId}/player-input`, {
+        action: trimmedMessage,
+        suggested_actions: lastSuggestedActions,
+      });
+
+      const { state, events } = response.data;
+      if (state === GameState.IN_PROGRESS) {
+        events.at(-1).suggested_actions = response.data.suggested_actions;
+      }
+
+      events.forEach((event) => {
+        dispatch({ type: ActionTypes.START_TYPING, message: event });
+      });
+
+      // Lastly, set the game state
+      dispatch({ type: ActionTypes.SET_GAME_STATE, gameState: state });
+
+      // If the last response has suggested actions, set them
+      if (events.at(-1)?.suggested_actions) {
+        setLastSuggestedActions(events.at(-1).suggested_actions);
+      }
+
+      // Clear TextBox
+      setMessage("");
     } catch (error) {
-      console.error("Error sending message:", error);
-      // Optionally show error to user
+      if (error.response?.status === 400) {
+        // Handle 400 Bad Request (validation errors)
+        setError(error.response.data.error);
+        dispatch({ type: ActionTypes.REVERT });
+        return;
+      } else {
+        // Handle other errors
+        console.error("Error sending message:", error);
+        alert(error.message || "An unknown error occurred. Please try again.");
+        navigate("/");
+        return;
+      }
     }
   };
 
-  const handleContinue = () => {
-    if (currentState === SessionState.AWAIT_CONTINUE) {
-      dispatch({ type: 'CONTINUE_PRESSED' });
-      
-      // Here you would typically load the next floor/message
-      // For now, we'll just simulate it
-      setTimeout(() => {
-        const nextMessage = {
-          role: Roles.NARRATOR,
-          content: "The adventure continues..."
-        };
-        dispatch({ type: 'START_TYPING', message: nextMessage });
-      }, 500);
-    }
+  // Handler for when a suggested action is clicked
+  const handleActionClick = (action) => {
+    setMessage(action);
+    inputRef.current?.focus();
   };
+
+  // Focus the input field and clear the message
+  const focusInput = useCallback(() => {
+    setMessage("");
+    inputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const initializeSession = async () => {
       if (hasInitialized.current) return;
       hasInitialized.current = true;
 
-      // If we have initial narrative from navigation state, use it
-      if (location.state?.initialNarrative) {
-        const initialMessage = {
-          role: Roles.NARRATOR,
-          content: location.state.initialNarrative,
-        };
-        dispatch({ type: 'START_TYPING', message: initialMessage });
-        dispatch({ type: 'SET_GAME_STATE', gameState: GameState.WAITING_FOR_NEXT_FLOOR });
-
-      } else if (sessionId) {
-        // Otherwise, load session data if we have a sessionId
-        try {
-          const response = await api.get(`/session/${sessionId}/get-events`);
-          dispatch({ type: 'ADD_MESSAGE', message: response.data.events });
-          dispatch({ type: 'SET_GAME_STATE', gameState: response.data.state });
-          
-          // If no initial message, go to input state
-          if (response.data.events.length === 0) {
-            dispatch({ type: 'TYPING_COMPLETE' });
-          }
-        } catch (error) {
-          console.error("Error loading session:", error);
-          alert(
-            `Failed to load session: ${
-              error.response?.data?.message || error.message
-            }`
-          );
-          navigate("/");
-          return;
-        }
+      if (!api) {
+        // TODO: Better Error Handling
+        console.error("API client is not available");
+        return;
       }
 
-      dispatch({ type: 'SET_LOADING', isLoading: false });
+      try {
+        // If we have initial narrative from navigation state (coming from PlayerCreation)
+        if (initialNarrative) {
+          const initialMessage = {
+            role: Roles.NARRATOR,
+            content: initialNarrative,
+          };
+
+          // Set initial state for new session
+          dispatch({
+            type: ActionTypes.SET_GAME_STATE,
+            gameState: GameState.WAITING_FOR_NEXT_FLOOR,
+          });
+
+          dispatch({ type: ActionTypes.START_TYPING, message: initialMessage });
+        }
+
+        // Load existing session
+        else if (sessionId) {
+          const response = await api.get(`/session/${sessionId}/get-events`);
+
+          // Add any existing messages to the chat
+          if (response.data.events?.length > 0) {
+            response.data.events.forEach((event) => {
+              dispatch({ type: ActionTypes.ADD_MESSAGE, message: event });
+            });
+
+            // If the last response has suggested actions, set them
+            if (response.data.events.at(-1)?.suggested_actions) {
+              setLastSuggestedActions(
+                response.data.events.at(-1).suggested_actions
+              );
+            }
+          }
+
+          // Set game state and determine initial session state
+          const gameState = response.data.state;
+          dispatch({ type: ActionTypes.SET_GAME_STATE, gameState });
+          dispatch({ type: ActionTypes.IDENTIFY_STATE });
+        } else {
+          // TODO: Better Error Handling
+          console.error("No session ID provided");
+        }
+      } catch (error) {
+        console.error("Error initializing session:", error);
+        alert(
+          `Failed to initialize session: ${
+            error.response?.data?.message || error.message
+          }`
+        );
+        navigate("/");
+        return;
+      }
+
+      dispatch({
+        type: ActionTypes.SET_INITIALIZING,
+        isInitializing: false,
+      });
     };
 
     initializeSession();
-  }, [sessionId, location.state, navigate]);
+  }, [sessionId, initialNarrative, navigate, api]);
 
-  if (isLoading) {
+  if (isInitializing) {
+    return (
+      <div className="h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading session...</div>
+      </div>
+    );
+  }
+
+  // Render the chat messages
+  const renderMessages = () => {
+    return (
+      <div className="space-y-2">
+        {oldMessages.map((msg, index) => {
+          return (
+            <ChatMessage
+              key={`msg-${index}`}
+              role={msg.role}
+              content={msg.content}
+              suggested_actions={msg.suggested_actions}
+              isLastEvent={index === oldMessages.length - 1}
+              onActionClick={handleActionClick}
+              onFocusInput={focusInput}
+            />
+          );
+        })}
+
+        {currentState === SessionState.TYPING && (
+          <ChatMessage
+            role={typingMessage.role}
+            content={
+              <TypeAnimation
+                key={typingMessage.content} // Force re-render when content changes
+                sequence={[
+                  typingMessage.content,
+                  MessageDelay,
+                  handleTypingComplete,
+                ]}
+                wrapper="span"
+                speed={TypingSpeed}
+                cursor={true}
+              />
+            }
+          />
+        )}
+
+        {currentState === SessionState.AWAIT_CONTINUE && (
+          <ContinuePrompt onClick={handleContinue} />
+        )}
+
+        {currentState === SessionState.LOADING && <LoadingIndicator />}
+        <div ref={messagesEndRef} />
+      </div>
+    );
+  };
+
+  // Render loading state
+  if (isInitializing) {
     return (
       <div className="h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading session...</div>
@@ -214,6 +349,13 @@ function Session() {
         <LogoutButton />
       </TopBar>
 
+      <SidePanel 
+        isOpen={isSidebarOpen} 
+        onToggle={setIsSidebarOpen} 
+        sessionId={sessionId} 
+        api={api}
+      />
+
       <div className="flex-1 overflow-hidden">
         <div className="container mx-auto h-full p-4 max-w-4xl flex flex-col">
           <div className="bg-gray-800 rounded-lg p-6 flex flex-col h-full">
@@ -221,106 +363,27 @@ function Session() {
             <div
               className={`${styles.chatHistory} flex-1 overflow-y-auto mb-4`}>
               <div className="w-full">
-                {isLoading ? (
-                  <div className="text-gray-400 text-center py-4">
-                    Loading chat history...
+                {oldMessages.length === 0 && !typingMessage ? (
+                  <div className="text-gray-400 text-center py-8">
+                    No messages yet. Start the conversation!
                   </div>
                 ) : (
-                  <>
-                    {/* Messages */}
-                    <div className="space-y-2">
-                      {oldMessages.map((msg, index) => (
-                        <div
-                          key={`old-${index}`}
-                          className="grid grid-cols-12 gap-2 text-white">
-                          <div className="col-span-2 font-medium text-green-400 break-words">
-                            {msg.role}
-                          </div>
-                          <div className="col-span-10 break-words">
-                            {msg.content}
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Typing message */}
-                      {currentState === SessionState.TYPING && typingMessage && (
-                        <div className="grid grid-cols-12 gap-2 text-white">
-                          <div className="col-span-2 font-medium text-green-400 break-words">
-                            {typingMessage.role}
-                          </div>
-                          <div className="col-span-10 break-words">
-                            <TypingText
-                              text={typingMessage.content}
-                              role={typingMessage.role}
-                              skipTyping={skipTyping}
-                              onTypingComplete={handleTypingComplete}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Continue button */}
-                      {currentState === SessionState.AWAIT_CONTINUE && (
-                        <div className="grid grid-cols-12 gap-2 text-white">
-                          <div className="col-span-2 font-medium text-green-400">
-                            System
-                          </div>
-                          <div className="col-span-10">
-                            <button
-                              onClick={handleContinue}
-                              className="text-blue-400 hover:text-blue-300 underline cursor-pointer focus:outline-none">
-                              Click here to continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </>
+                  renderMessages()
                 )}
               </div>
             </div>
 
             {/* Input area */}
-            <div className="border-t border-gray-700 pt-4">
-              <form onSubmit={handleSubmit} className="flex gap-2">
-                <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  disabled={currentState !== SessionState.AWAIT_INPUT}
-                  className={`flex-1 bg-gray-700 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 ${
-                    currentState !== SessionState.AWAIT_INPUT
-                      ? "opacity-50 cursor-not-allowed"
-                      : "focus:ring-green-500"
-                  }`}
-                  placeholder={
-                    currentState === SessionState.TYPING 
-                      ? "Please wait..." 
-                      : currentState === SessionState.AWAIT_INPUT 
-                        ? "Type your message..."
-                        : currentState === SessionState.AWAIT_CONTINUE
-                          ? "Click the continue button above"
-                          : "Game complete"
-                  }
-                />
-                <button
-                  type="submit"
-                  className={`font-bold py-2 px-6 rounded ${
-                    currentState === SessionState.TYPING
-                      ? "bg-gray-500 hover:bg-gray-600 text-white"
-                      : currentState === SessionState.AWAIT_INPUT
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-gray-500 cursor-not-allowed"
-                  }`}
-                  disabled={currentState !== SessionState.TYPING && currentState !== SessionState.AWAIT_INPUT}>
-                  {currentState === SessionState.TYPING 
-                    ? "Skip" 
-                    : currentState === SessionState.AWAIT_INPUT 
-                      ? "Send"
-                      : "✓"
-                  }
-                </button>
-              </form>
+            <div className="mt-4">
+              <InputArea
+                state={currentState}
+                message={message}
+                onMessageChange={setMessage}
+                onSubmit={handleSubmit}
+                onContinue={handleContinue}
+                inputRef={inputRef}
+                error={error}
+              />
             </div>
           </div>
         </div>
