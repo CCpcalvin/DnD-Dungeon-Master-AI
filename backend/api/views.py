@@ -347,12 +347,47 @@ def get_session_info(request: HttpRequest, session_id: int):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_sessions(request: HttpRequest):
-    sessions = GameSession.objects.filter(user=request.user).select_related("player")
+    # First, clean up invalid sessions
+    user_sessions = GameSession.objects.filter(user=request.user)
+
+    # Find and delete invalid sessions
+    invalid_sessions = []
+    for session in user_sessions:
+        is_invalid = False
+
+        # Check if session is missing required related models
+        try:
+            if not hasattr(session, "player"):
+                is_invalid = True
+            elif not hasattr(session, "non_combat_floor_model"):
+                is_invalid = True
+            elif not hasattr(session.non_combat_floor_model, "floor_history_model"):
+                is_invalid = True
+
+            if is_invalid:
+                invalid_sessions.append(session.id)
+
+        except Exception:
+            # If any error occurs while checking, mark as invalid
+            invalid_sessions.append(session.id)
+
+    # Delete all invalid sessions in a single query
+    if invalid_sessions:
+        GameSession.objects.filter(id__in=invalid_sessions).delete()
+
+    # Now get all valid sessions with related data
+    sessions = GameSession.objects.filter(user=request.user).select_related(
+        "player", "non_combat_floor_model__floor_history_model"
+    )
 
     data = [
         {
             "id": session.id,
-            "player_name": session.player.player_name if session.player else None,
+            "player_name": (
+                session.player.player_name
+                if hasattr(session, "player") and session.player
+                else None
+            ),
             "theme": session.theme,
             "current_floor": session.current_floor,
             "game_state": session.game_state,

@@ -1,20 +1,10 @@
 FROM python:3.10-slim
 
 # Set working directory
-WORKDIR /home/backend/app
-
-# Create a non-root user and switch to it
-RUN useradd -m backend && \
-    mkdir -p /home/backend/app && \
-    mkdir -p /home/backend/.local && \
-    chown -R backend:backend /home/backend/
-USER backend
+WORKDIR /app
 
 # Copy requirements first to leverage Docker cache
-COPY --chown=backend:backend requirements.txt .
+COPY requirements.txt .
 
 # Install python library
-RUN pip install --user --no-cache-dir -r requirements.txt
-
-# Add to path
-ENV PATH="/home/backend/.local/bin:${PATH}"
+RUN pip install --no-cache-dir -r requirements.txt

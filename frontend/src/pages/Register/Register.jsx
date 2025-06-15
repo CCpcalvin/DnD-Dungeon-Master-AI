@@ -2,8 +2,7 @@ import { useState } from 'react';
 
 import api from '../../api';
 import { useNavigate, Link } from 'react-router-dom';
-
-
+import { ACCESS_TOKEN, REFRESH_TOKEN } from '../../constants';
 import styles from './Register.module.css';
 
 import TopBar from '../../components/TopBar';
@@ -15,17 +14,35 @@ function Register() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/user/register', { username, password });
-      if (response.status === 201) {
-        setUsername('');
-        setPassword('');
-        navigate('/login');
+      // First, register the user
+      const registerResponse = await api.post('/user/register', { username, password });
+      if (registerResponse.status === 201) {
+        // If registration is successful, log the user in
+        const loginResponse = await api.post('/user/token', { username, password });
+        
+        if (loginResponse.status === 200) {
+          const { access, refresh } = loginResponse.data;
+          // Save tokens to local storage
+          localStorage.setItem(ACCESS_TOKEN, access);
+          localStorage.setItem(REFRESH_TOKEN, refresh);
+          
+          setUsername('');
+          setPassword('');
+          navigate('/');
+        }
       }
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error('Registration or login failed:', error);
+      if (error.response?.status === 400) {
+        setErrorMessage('This username is already taken.');
+      } else {
+        setErrorMessage('An error occurred during registration. Please try again.');
+      }
     }
   };
 
@@ -55,6 +72,7 @@ function Register() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
             <small className={styles.smallText}>
               Already have an account?
               <Link to="/login" className={styles.link}>Login here</Link>

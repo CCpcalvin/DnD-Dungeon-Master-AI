@@ -22,7 +22,7 @@ services:
         depends_on:
             - ollama
         volumes:
-            - .:/home/backend/app
+            - .:/app
         ports:
             - "8000:8000"
         command: python backend/manage.py runserver 0.0.0.0:8000
@@ -34,7 +34,7 @@ services:
         depends_on:
             - backend
         volumes:
-            - .:/home/frontend/app
+            - .:/app
         ports:
             - "5173:5173"
         command: sh -c "cd frontend && HOST=0.0.0.0 npm run dev"

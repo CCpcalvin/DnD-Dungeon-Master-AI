@@ -52,11 +52,16 @@ function Session({ api, params = {}, ...props }) {
   // For suggested_action submission
   const [lastSuggestedActions, setLastSuggestedActions] = useState([]);
 
-  // Error state
+  // Error state and tracking
   const [error, setError] = useState(null);
+  const [isResetting, setIsResetting] = useState(false);
 
-  // Clear error when message changes
+  // Clear error when message changes, unless we're in the middle of resetting it
   useEffect(() => {
+    if (isResetting) {
+      setIsResetting(false);
+      return;
+    }
     if (error) {
       setError(null);
     }
@@ -82,40 +87,42 @@ function Session({ api, params = {}, ...props }) {
   }, [state.typingMessage]);
 
   const handleContinue = async () => {
-    if (currentState === SessionState.AWAIT_CONTINUE) {
-      // Enter the loading state
-      dispatch({ type: ActionTypes.SET_LOADING });
+    if (currentState !== SessionState.AWAIT_CONTINUE) {
+      return;
+    }
 
-      // API call to get the next floor
-      try {
-        const response = await api.post(`/session/${sessionId}/new-floor`);
-        const { narrative, suggested_actions } = response.data;
+    // Enter the loading state
+    dispatch({ type: ActionTypes.SET_LOADING });
 
-        dispatch({
-          type: ActionTypes.START_TYPING,
-          message: {
-            role: Roles.NARRATOR,
-            content: narrative,
-            suggested_actions: suggested_actions,
-          },
-        });
+    // API call to get the next floor
+    try {
+      const response = await api.post(`/session/${sessionId}/new-floor`);
+      const { narrative, suggested_actions } = response.data;
 
-        dispatch({
-          type: ActionTypes.SET_GAME_STATE,
-          gameState: GameState.IN_PROGRESS,
-        });
+      dispatch({
+        type: ActionTypes.START_TYPING,
+        message: {
+          role: Roles.NARRATOR,
+          content: narrative,
+          suggested_actions: suggested_actions,
+        },
+      });
 
-        setLastSuggestedActions(suggested_actions);
-      } catch (error) {
-        console.error("Error getting next floor:", error);
-        alert(
-          `Failed to get next floor: ${
-            error.response?.data?.message || error.message
-          }`
-        );
-        navigate("/");
-        return;
-      }
+      dispatch({
+        type: ActionTypes.SET_GAME_STATE,
+        gameState: GameState.IN_PROGRESS,
+      });
+
+      setLastSuggestedActions(suggested_actions);
+    } catch (error) {
+      console.error("Error getting next floor:", error);
+      alert(
+        `Failed to get next floor: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+      navigate("/");
+      return;
     }
   };
 
@@ -143,7 +150,9 @@ function Session({ api, params = {}, ...props }) {
     // Simple client side validation
     const trimmedMessage = message.trim();
     if (!trimmedMessage) {
-      setMessage("");
+      setError("Please enter a message.");
+      setIsResetting(true);
+      setMessage(trimmedMessage);
       return;
     }
 
@@ -328,6 +337,14 @@ function Session({ api, params = {}, ...props }) {
         )}
 
         {currentState === SessionState.LOADING && <LoadingIndicator />}
+        
+        {state.gameState === GameState.COMPLETED && (
+          <ChatMessage
+            role={Roles.NARRATOR}
+            content="You are defeated. The game is over. Good luck next time!"
+          />
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
     );
@@ -349,10 +366,10 @@ function Session({ api, params = {}, ...props }) {
         <LogoutButton />
       </TopBar>
 
-      <SidePanel 
-        isOpen={isSidebarOpen} 
-        onToggle={setIsSidebarOpen} 
-        sessionId={sessionId} 
+      <SidePanel
+        isOpen={isSidebarOpen}
+        onToggle={setIsSidebarOpen}
+        sessionId={sessionId}
         api={api}
       />
 

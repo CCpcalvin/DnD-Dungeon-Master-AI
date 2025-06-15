@@ -14,12 +14,12 @@ import Container from '../../components/Container';
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setErrorMessage('');
 
     try {
       const response = await api.post('/user/token', { username, password });
@@ -40,10 +40,10 @@ function Login() {
 
       // Check if the error is a 401 Unauthorized
       if (error.response.status === 401) {
-        setError('Invalid username or password');
+        setErrorMessage('Invalid username or password');
       }
       else {
-        setError('Unknown Error');
+        setErrorMessage('Unknown Error');
       }
 
       // Clear any existing tokens on failed login
@@ -78,7 +78,7 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
             <small className={styles.smallText}>
               Don't have an account?
               <Link to="/register" className={styles.link}>Register here</Link>

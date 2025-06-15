@@ -1,4 +1,13 @@
 FROM node:24-slim
 
-WORKDIR /home/frontend/app
+# Set working directory
+WORKDIR /app
 
+# Create frontend directory
+RUN mkdir -p frontend
+
+# Copy package files
+COPY frontend/package*.json ./frontend/
+
+# Install dependencies including devDependencies (needed for Vite)
+RUN cd frontend && npm install
