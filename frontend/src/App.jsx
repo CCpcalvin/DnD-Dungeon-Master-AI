@@ -15,69 +15,77 @@ import PlayerCreation from "./pages/PlayerCreation/PlayerCreation";
 
 import TestMenu from "./pages/TestPages/TestMenu";
 import RedirectTest from "./pages/TestPages/RedirectTest";
+import About from "./pages/About/About";
+import Footer from "./components/Footer";
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route
-          path="/login"
-          element={
-            <GuestRoute>
-              <Login />
-            </GuestRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <GuestRoute>
-              <Register />
-            </GuestRoute>
-          }
-        />
-        <Route path="/logout" element={<Logout />} />
-        <Route
-          path="/my-sessions"
-          element={
-            <AuthRoute>
-              <MySessions />
-            </AuthRoute>
-          }
-        />
-        <Route
-          path="/player-creation"
-          element={
-            <AuthRoute>
-              <PlayerCreation />
-            </AuthRoute>
-          }
-        />
-        <Route
-          path="/session/:sessionId"
-          element={
-            <AuthRoute>
-              <Session api={api} />
-            </AuthRoute>
-          }
-        />
+      <div className="flex flex-col min-h-screen bg-gray-900">
+        <div className="flex-grow">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route
+              path="/login"
+              element={
+                <GuestRoute>
+                  <Login />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <GuestRoute>
+                  <Register />
+                </GuestRoute>
+              }
+            />
+            <Route path="/logout" element={<Logout />} />
+            <Route path="/about" element={<About />} />
+            <Route
+              path="/my-sessions"
+              element={
+                <AuthRoute>
+                  <MySessions />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/player-creation"
+              element={
+                <AuthRoute>
+                  <PlayerCreation />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/session/:sessionId"
+              element={
+                <AuthRoute>
+                  <Session api={api} />
+                </AuthRoute>
+              }
+            />
 
-        {/* Testing */}
-        <Route
-          path="/test"
-          element={
-            <AuthRoute>
-              <TestMenu />
-            </AuthRoute>
-          }
-        />
+            {/* Testing */}
+            <Route
+              path="/test"
+              element={
+                <AuthRoute>
+                  <TestMenu />
+                </AuthRoute>
+              }
+            />
 
-        <Route path="/test/:testCase" element={<RedirectTest />} />
+            <Route path="/test/:testCase" element={<RedirectTest />} />
 
-        {/* Invalid URL */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            {/* Invalid URL */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
     </BrowserRouter>
   );
 }

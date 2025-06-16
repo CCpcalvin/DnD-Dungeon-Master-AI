@@ -79,9 +79,7 @@ const SidePanel = ({ isOpen, onToggle, sessionId, api, children }) => {
     if (sessionInfo) {
       return (
         <div className="space-y-4 p-4">
-          <h2 className="text-xl font-semibold mb-4 text-white">
-            Session Information
-          </h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">Information</h2>
 
           <div>
             <h3 className="font-semibold text-gray-300">Theme</h3>

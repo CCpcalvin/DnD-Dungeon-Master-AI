@@ -1,16 +1,20 @@
 import { useNavigate } from 'react-router-dom';
+import BaseButton from './ui/BaseButton';
 
-function LogoutButton() {
+function LogoutButton({ size = 'md', className = '' }) {
   const navigate = useNavigate();
+  const handleClick = () => navigate('/logout');
 
   return (
-    <button
-      onClick={() => navigate('/logout')}
-      className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
+    <BaseButton
+      onClick={handleClick}
+      variant="danger"
+      size={size}
+      className={className}
     >
       Logout
-    </button>
-  )
+    </BaseButton>
+  );
 }
 
 export default LogoutButton;

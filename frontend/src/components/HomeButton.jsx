@@ -1,15 +1,19 @@
 import { useNavigate } from 'react-router-dom';
+import BaseButton from './ui/BaseButton';
 
-function HomeButton() {
+function HomeButton({ size = 'md', className = '' }) {
   const navigate = useNavigate();
+  const handleClick = () => navigate('/');
 
   return (
-    <button
-      onClick={() => navigate('/')}
-      className="text-white hover:text-gray-300 flex items-center font-bold"
+    <BaseButton
+      onClick={handleClick}
+      variant="ghost"
+      size={size}
+      className={`hover:bg-opacity-20 ${className}`}
     >
       Home
-    </button>
+    </BaseButton>
   );
 }
 

@@ -5,6 +5,7 @@ import api from "../../api";
 import TopBar from "../../components/TopBar";
 import HomeButton from "../../components/HomeButton";
 import LogoutButton from "../../components/LogoutButton";
+import NewAdventureButton from "../../components/NewAdventureButton";
 import Container from "../../components/Container";
 
 import styles from "./MySessions.module.css";
@@ -43,14 +44,25 @@ function MySessions() {
     <div className="min-h-screen bg-gray-900">
       <TopBar>
         <div className="flex justify-between items-center w-full">
-          <HomeButton />
-          <LogoutButton />
+          <HomeButton size="sm" />
+          <LogoutButton size="sm" />
         </div>
       </TopBar>
 
       <Container>
         <div className="bg-gray-800 rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-white mb-6">My Sessions</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-white">
+              <span className="hidden sm:inline">My Sessions</span>
+              <span className="sm:hidden">Sessions</span>
+            </h1>
+            <div className="hidden sm:block">
+              <NewAdventureButton />
+            </div>
+            <div className="sm:hidden">
+              <NewAdventureButton className="px-3" />
+            </div>
+          </div>
 
           {sessions.length > 0 ? (
             <div className={styles.sessionsGrid}>

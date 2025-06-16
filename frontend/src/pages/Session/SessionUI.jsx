@@ -173,7 +173,7 @@ export const ChatMessage = ({
 
   return (
     <div className="grid grid-cols-12 gap-2 text-white">
-      <div className="col-span-2 font-medium text-green-400 break-words">
+      <div className="col-span-2 font-medium text-green-400 overflow-hidden">
         {role}
       </div>
       <div className="col-span-10 break-words">
