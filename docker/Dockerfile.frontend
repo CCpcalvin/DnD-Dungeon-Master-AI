@@ -3,7 +3,8 @@ FROM node:24-slim
 # Set working directory
 WORKDIR /app
 
-COPY frontend/package.json /app/frontend/package.json
-
-COPY frontend/entrypoint.sh /app/frontend/entrypoint.sh
-ENTRYPOINT [ "/app/frontend/entrypoint.sh" ]
+# Set up entrypoint.sh
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends dos2unix && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
