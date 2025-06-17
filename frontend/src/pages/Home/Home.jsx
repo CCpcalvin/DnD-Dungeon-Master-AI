@@ -12,6 +12,7 @@ import AboutButton from "../../components/AboutButton";
 import Container from "../../components/Container";
 import NewAdventureButton from "../../components/NewAdventureButton";
 import ContinueButton from "../../components/ContinueButton";
+import LoginRegisterButton from "../../components/LoginRegisterButton";
 
 function Home() {
   const navigate = useNavigate();
@@ -73,11 +74,7 @@ function Home() {
                   </>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <button
-                      className="bg-green-700 hover:bg-green-600 text-white font-medium py-2 px-6 rounded-md text-sm transition-colors whitespace-nowrap"
-                      onClick={() => navigate("/login")}>
-                      Login / Register
-                    </button>
+                    <LoginRegisterButton />
                     <p className="text-gray-400 text-sm text-center">
                       Create an account to save your progress
                     </p>

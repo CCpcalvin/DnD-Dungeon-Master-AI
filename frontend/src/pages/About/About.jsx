@@ -1,12 +1,35 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import styles from "./About.module.css";
 import TopBar from "../../components/TopBar";
 import HomeButton from "../../components/HomeButton";
 import LogoutButton from "../../components/LogoutButton";
+import LoginRegisterButton from "../../components/LoginRegisterButton";
+
+
 import Container from "../../components/Container";
+
+import { isAuthenticated } from "../../utils/auth";
 
 function About() {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      setIsLoggedIn(await isAuthenticated());
+    };
+    checkAuth();
+
+    // Set up a storage event listener to detect token changes in other tabs
+    const handleStorageChange = checkAuth;
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   const handleBack = () => {
     navigate(-1); // Go back to previous page
@@ -15,8 +38,8 @@ function About() {
   return (
     <div className={styles.container}>
       <TopBar>
-        <HomeButton onClick={handleBack} />
-        <LogoutButton />
+        <HomeButton size="sm"/>
+        {isLoggedIn ? <LogoutButton size="sm" /> : <LoginRegisterButton size="sm" />}
       </TopBar>
 
       <Container>

@@ -35,7 +35,7 @@ def index(request: HttpRequest):
     """
     Render the index page.
     """
-    return HttpResponse("dnd game master is running.")
+    return HttpResponse("dnd dungeon master is running.")
 
 
 class CreateUserView(generics.CreateAPIView):
