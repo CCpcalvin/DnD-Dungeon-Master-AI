@@ -3,8 +3,13 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
+# Copy entire app
 COPY requirements.txt .
 
 # Install python library
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/entrypoint.sh /app/backend/entrypoint.sh
+ENTRYPOINT [ "/app/backend/entrypoint.sh" ]
+
+

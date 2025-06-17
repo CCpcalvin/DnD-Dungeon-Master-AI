@@ -14,6 +14,8 @@ import NewAdventureButton from "../../components/NewAdventureButton";
 import ContinueButton from "../../components/ContinueButton";
 import LoginRegisterButton from "../../components/LoginRegisterButton";
 
+import Footer from "../../components/Footer";
+
 function Home() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -85,6 +87,7 @@ function Home() {
           </div>
         </Container>
       </div>
+      <Footer />
     </div>
   );
 }

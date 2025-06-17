@@ -3,11 +3,7 @@ FROM node:24-slim
 # Set working directory
 WORKDIR /app
 
-# Create frontend directory
-RUN mkdir -p frontend
+COPY frontend/package.json /app/frontend/package.json
 
-# Copy package files
-COPY frontend/package*.json ./frontend/
-
-# Install dependencies including devDependencies (needed for Vite)
-RUN cd frontend && npm install
+COPY frontend/entrypoint.sh /app/frontend/entrypoint.sh
+ENTRYPOINT [ "/app/frontend/entrypoint.sh" ]

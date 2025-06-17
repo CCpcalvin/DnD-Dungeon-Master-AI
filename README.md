@@ -6,6 +6,7 @@
   - [Distinctiveness](#distinctiveness)
   - [Complexity](#complexity)
 - [Installation](#installation)
+  - [Prerequisites](#prerequisites)
   - [Using Docker Compose](#using-docker-compose)
   - [Close the server](#close-the-server)
 - [Game](#game)
@@ -69,6 +70,11 @@ If we only focus on the web development parts i.e. `Backend` and `Frontend`, we 
 I strongly believe that this project is complex enough for a capstone project.
 
 # Installation
+
+## Prerequisites
+
+- `Docker` and `Docker Compose`
+- (Optional) `cuda` for `Ollama` to speed up the LLM performance using GPU.
 
 ## Using Docker Compose
 

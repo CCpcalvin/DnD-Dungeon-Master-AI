@@ -22,6 +22,10 @@ function MySessions() {
         const response = await api.get("get-sessions");
         setSessions(response.data.sessions);
       } catch (err) {
+        if (err.response && err.response.status === 401) {
+          navigate('/logout');
+          return;
+        }
         setError("Failed to load sessions");
         console.error("Error fetching sessions:", err);
       } finally {
