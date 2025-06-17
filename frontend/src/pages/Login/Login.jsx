@@ -55,7 +55,7 @@ function Login() {
   return (
     <div>
       <TopBar>
-        <HomeButton />
+        <HomeButton size="sm" />
       </TopBar>
 
       <Container>

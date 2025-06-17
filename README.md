@@ -74,24 +74,19 @@ I strongly believe that this project is complex enough for a capstone project.
 ## Prerequisites
 
 - `Docker` and `Docker Compose`
-- (Optional) `cuda` for `Ollama` to speed up the LLM performance using GPU.
+- `cuda` for `Ollama` to speed up the LLM performance using GPU.
 
 ## Using Docker Compose
 
-1. Open a terminal and run `docker-compose up --build` to build everything and start the container.
+1. Open a terminal and run `docker-compose build` to build the images.
 
-2. Open a new terminal and run `docker-compose exec -it ollama ollama run llama3.1:8b` to download `llama3.1:8b` as the LLM.
+2. Then run `docker-compose up` to start the containers.
+
+3. Open a new terminal and run `docker-compose exec -it ollama ollama run llama3.1:8b` to download `llama3.1:8b` as the LLM.
 
    - After you see the "success" message (you can try to type something and interact with the LLM), you can just type `/bye` to the console to exit.
 
-3. Run `docker-compose exec -it backend /bin/sh` to open a shell in the `backend` container
-
-   - Then `cd backend` and run `python manage.py makemigrations` and `python manage.py migrate` to generate the database
-   - At the end, just type `exit` to exit the container.
-
-4. Now run `docker-compose restart` to reload the container.
-
-5. Open `http://localhost:5173` in your browser to start the game.
+4. Open `http://localhost:5173` in your browser to start the game.
 
 ## Close the server
 

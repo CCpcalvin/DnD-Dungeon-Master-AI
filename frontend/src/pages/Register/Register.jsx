@@ -49,7 +49,7 @@ function Register() {
   return (
     <div>
       <TopBar>
-        <HomeButton />
+        <HomeButton size="sm" />
       </TopBar>
 
       <Container>
