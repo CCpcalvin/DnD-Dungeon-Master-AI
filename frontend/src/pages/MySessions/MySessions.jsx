@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../../api";
+import api from "../../utils/api";
+import { handleApiError } from "../../utils/apiErrorHandler";
 
 import TopBar from "../../components/TopBar";
 import HomeButton from "../../components/HomeButton";
@@ -22,12 +23,15 @@ function MySessions() {
         const response = await api.get("get-sessions");
         setSessions(response.data.sessions);
       } catch (err) {
-        if (err.response && err.response.status === 401) {
-          navigate('/logout');
-          return;
-        }
-        setError("Failed to load sessions");
-        console.error("Error fetching sessions:", err);
+        handleApiError(err, {
+          onError: (response) => {
+            if (response.status === 401) {
+              navigate("/logout");
+              return;
+            }
+            console.error("Error fetching sessions:", err);
+          },
+        });
       } finally {
         setLoading(false);
       }

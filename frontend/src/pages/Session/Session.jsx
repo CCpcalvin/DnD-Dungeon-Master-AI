@@ -69,7 +69,13 @@ function Session({ api, params = {}, ...props }) {
 
   // Use reducer for state management
   const [state, dispatch] = useReducer(sessionReducer, initialState);
-  const { currentState, isInitializing, oldMessages, typingMessage } = state;
+  const {
+    currentState,
+    gameState,
+    isInitializing,
+    oldMessages,
+    typingMessage,
+  } = state;
   const messagesEndRef = useRef(null);
 
   // Auto-scroll to bottom when messages or state changes
@@ -186,18 +192,47 @@ function Session({ api, params = {}, ...props }) {
       // Clear TextBox
       setMessage("");
     } catch (error) {
-      if (error.response?.status === 400) {
-        // Handle 400 Bad Request (validation errors)
-        setError(error.response.data.error);
+      console.error("API Error:", error);
+
+      // Extract status and initialize error message
+      const status = error.response?.status; // Will be undefined if error.response is undefined
+      let errorMessage = "An error occurred while processing your request";
+
+      // Handle 400 Bad Request specifically
+      if (status === 400 && error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+        setError(errorMessage);
         dispatch({ type: ActionTypes.REVERT });
         return;
-      } else {
-        // Handle other errors
-        console.error("Error sending message:", error);
-        alert(error.message || "An unknown error occurred. Please try again.");
-        navigate("/");
-        return;
       }
+
+      // For other errors, try to get the error message from the response data
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      // Set the error in the UI
+      setError(errorMessage);
+
+      // Handle different status codes
+      if (status) {
+        if (status === 401 || status === 403) {
+          // Unauthorized or Forbidden - redirect to login
+          navigate("/login");
+          return;
+        } else if (status >= 500) {
+          // Server errors - show alert
+          alert(`Server Error: ${errorMessage}`);
+        }
+      } else {
+        // Network errors or other non-HTTP errors
+        console.error("Network/Request Error:", errorMessage);
+      }
+
+      // Revert to the previous state
+      dispatch({ type: ActionTypes.REVERT });
     }
   };
 
@@ -337,14 +372,15 @@ function Session({ api, params = {}, ...props }) {
         )}
 
         {currentState === SessionState.LOADING && <LoadingIndicator />}
-        
-        {state.gameState === GameState.COMPLETED && (
-          <ChatMessage
-            role={Roles.NARRATOR}
-            content="You are defeated. The game is over. Good luck next time!"
-          />
-        )}
-        
+
+        {gameState === GameState.COMPLETED &&
+          currentState === SessionState.COMPLETED && (
+            <ChatMessage
+              role={Roles.NARRATOR}
+              content="You are defeated. The game is over. Good luck next time!"
+            />
+          )}
+
         <div ref={messagesEndRef} />
       </div>
     );
@@ -362,8 +398,8 @@ function Session({ api, params = {}, ...props }) {
   return (
     <div className="h-screen bg-gray-900 flex flex-col overflow-hidden">
       <TopBar>
-        <HomeButton />
-        <LogoutButton />
+        <HomeButton size="sm" />
+        <LogoutButton size="sm" />
       </TopBar>
 
       <SidePanel

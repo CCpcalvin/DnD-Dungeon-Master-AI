@@ -49,6 +49,13 @@
     background-color: #059669; /* emerald-700 */
 }
 
+.errorMessage {
+    color: #EF4444; /* red-500 */
+    font-size: 0.875rem; /* text-sm */
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
 .smallText {
     color: #9CA3AF; /* gray-400 */
     display: block;

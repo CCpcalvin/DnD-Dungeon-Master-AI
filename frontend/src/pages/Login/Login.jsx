@@ -1,28 +1,29 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import api from '../../api';
-import { useNavigate, Link } from 'react-router-dom';
+import api from "../../utils/api";
+import { useNavigate, Link } from "react-router-dom";
 
-import { ACCESS_TOKEN, REFRESH_TOKEN } from '../../constants';
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../constants";
+import { handleApiError } from "../../utils/apiErrorHandler";
 
-import styles from './Login.module.css';
+import styles from "./Login.module.css";
 
-import TopBar from '../../components/TopBar';
-import HomeButton from '../../components/HomeButton';
-import Container from '../../components/Container';
+import TopBar from "../../components/TopBar";
+import HomeButton from "../../components/HomeButton";
+import Container from "../../components/Container";
 
 function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
+    setErrorMessage("");
 
     try {
-      const response = await api.post('/user/token', { username, password });
+      const response = await api.post("/user/token", { username, password });
 
       if (response.status === 200) {
         const { access, refresh } = response.data;
@@ -30,25 +31,24 @@ function Login() {
         localStorage.setItem(ACCESS_TOKEN, access);
         localStorage.setItem(REFRESH_TOKEN, refresh);
 
-        setUsername('');
-        setPassword('');
-        navigate('/');
+        setUsername("");
+        setPassword("");
+        navigate("/");
       }
     } catch (error) {
-      // Console error for debugging
-      console.error('Login failed:', error);
-
-      // Check if the error is a 401 Unauthorized
-      if (error.response.status === 401) {
-        setErrorMessage('Invalid username or password');
-      }
-      else {
-        setErrorMessage('Unknown Error');
-      }
-
-      // Clear any existing tokens on failed login
-      localStorage.removeItem(ACCESS_TOKEN);
-      localStorage.removeItem(REFRESH_TOKEN);
+      handleApiError(error, {
+        onError: (response) => {
+          // Handle specific HTTP errors
+          if (response.status === 401) {
+            setErrorMessage("Invalid username or password");
+            // Clear tokens on unauthorized
+            localStorage.removeItem(ACCESS_TOKEN);
+            localStorage.removeItem(REFRESH_TOKEN);
+          } else {
+            setErrorMessage("An unexpected error occurred");
+          }
+        },
+      });
     }
   };
 
@@ -78,10 +78,14 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+            {errorMessage && (
+              <p className={styles.errorMessage}>{errorMessage}</p>
+            )}
             <small className={styles.smallText}>
               Don't have an account?
-              <Link to="/register" className={styles.link}>Register here</Link>
+              <Link to="/register" className={styles.link}>
+                Register here
+              </Link>
             </small>
             <button type="submit" className={styles.submitButton}>
               Login

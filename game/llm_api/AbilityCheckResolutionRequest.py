@@ -18,8 +18,8 @@ class AbilityCheckResolutionResponseModel(LLMResponseModel):
     )
     health_change: int = Field(
         ...,
-        ge=-10,
-        le=10,
+        ge=-9,
+        le=9,
         description="The amount of health change from the check (-10 to 10)",
     )
     summary: str = Field(..., description="A brief summary of the outcome")

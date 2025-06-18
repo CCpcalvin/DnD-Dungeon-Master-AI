@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ACCESS_TOKEN, BACKEND_ULR } from './constants';
+import { ACCESS_TOKEN, BACKEND_ULR } from '../constants';
 
 const api = axios.create({
   baseURL: BACKEND_ULR,

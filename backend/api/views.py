@@ -28,6 +28,7 @@ from .models import (
 )
 
 import json
+from .utils import handle_llm_errors, validate_session
 
 
 # Create your views here.
@@ -167,16 +168,9 @@ def create_game(request: HttpRequest):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def new_floor(request: HttpRequest, session_id: int):
-    try:
-        session: GameSession = GameSession.objects.get(pk=session_id)
-
-    except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=404)
-
-    if session.user != request.user:
-        return JsonResponse({"error": "You do not own this session"}, status=403)
-
+@validate_session
+@handle_llm_errors
+def new_floor(request: HttpRequest, session_id: int, session: GameSession):
     if session.game_state != GameState.WAITING_FOR_NEXT_FLOOR:
         return JsonResponse(
             {"error": "Cannot create new floor in this state"}, status=400
@@ -216,16 +210,9 @@ def new_floor(request: HttpRequest, session_id: int):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def player_input(request: HttpRequest, session_id: int):
-    try:
-        session: GameSession = GameSession.objects.get(pk=session_id)
-
-    except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=404)
-
-    if session.user != request.user:
-        return JsonResponse({"error": "You do not own this session"}, status=403)
-
+@validate_session
+@handle_llm_errors
+def player_input(request: HttpRequest, session_id: int, session: GameSession):
     if session.game_state != GameState.IN_PROGRESS:
         return JsonResponse({"error": "Cannot interact in this state"}, status=400)
 
@@ -304,16 +291,8 @@ def player_input(request: HttpRequest, session_id: int):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def get_session_info(request: HttpRequest, session_id: int):
-    try:
-        session: GameSession = GameSession.objects.get(pk=session_id)
-
-    except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=404)
-
-    if session.user != request.user:
-        return JsonResponse({"error": "You do not own this session"}, status=403)
-
+@validate_session
+def get_session_info(request: HttpRequest, session_id: int, session: GameSession):
     # Get the player info or return 404 if not found
     try:
         player_info = session.player
@@ -400,15 +379,8 @@ def get_sessions(request: HttpRequest):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def get_events(request: HttpRequest, session_id: int):
-    try:
-        session: GameSession = GameSession.objects.get(pk=session_id)
-    except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=404)
-
-    if session.user != request.user:
-        return JsonResponse({"error": "You do not own this session"}, status=403)
-
+@validate_session
+def get_events(request: HttpRequest, session_id: int, session: GameSession):
     events = GameEvent.objects.filter(session=session).order_by("created_at")
     data = []
     for event in events:
@@ -426,13 +398,6 @@ def get_events(request: HttpRequest, session_id: int):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def get_game_state(request: HttpRequest, session_id: int):
-    try:
-        session: GameSession = GameSession.objects.get(pk=session_id)
-    except GameSession.DoesNotExist:
-        return JsonResponse({"error": "Session does not exist"}, status=404)
-
-    if session.user != request.user:
-        return JsonResponse({"error": "You do not own this session"}, status=403)
-
+@validate_session
+def get_game_state(request: HttpRequest, session_id: int, session: GameSession):
     return JsonResponse({"state": session.game_state})

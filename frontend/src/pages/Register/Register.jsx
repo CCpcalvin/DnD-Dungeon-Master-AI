@@ -1,48 +1,67 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import api from '../../api';
-import { useNavigate, Link } from 'react-router-dom';
-import { ACCESS_TOKEN, REFRESH_TOKEN } from '../../constants';
-import styles from './Register.module.css';
+import api from "../../utils/api";
+import { handleApiError } from "../../utils/apiErrorHandler";
 
-import TopBar from '../../components/TopBar';
-import HomeButton from '../../components/HomeButton';
-import Container from '../../components/Container';
+import { useNavigate, Link } from "react-router-dom";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../constants";
+import styles from "./Register.module.css";
+
+import TopBar from "../../components/TopBar";
+import HomeButton from "../../components/HomeButton";
+import Container from "../../components/Container";
 
 function Register() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       // First, register the user
-      const registerResponse = await api.post('/user/register', { username, password });
+      const registerResponse = await api.post("/user/register", {
+        username,
+        password,
+      });
+
       if (registerResponse.status === 201) {
         // If registration is successful, log the user in
-        const loginResponse = await api.post('/user/token', { username, password });
-        
+        const loginResponse = await api.post("/user/token", {
+          username,
+          password,
+        });
+
         if (loginResponse.status === 200) {
           const { access, refresh } = loginResponse.data;
           // Save tokens to local storage
           localStorage.setItem(ACCESS_TOKEN, access);
           localStorage.setItem(REFRESH_TOKEN, refresh);
-          
-          setUsername('');
-          setPassword('');
-          navigate('/');
+
+          setUsername("");
+          setPassword("");
+          navigate("/");
         }
       }
     } catch (error) {
-      console.error('Registration or login failed:', error);
-      if (error.response?.status === 400) {
-        setErrorMessage('This username is already taken.');
-      } else {
-        setErrorMessage('An error occurred during registration. Please try again.');
-      }
+      handleApiError(error, {
+        onError: (response) => {
+          // Handle specific HTTP errors
+          if (response.status === 401) {
+            setErrorMessage("Invalid username or password");
+
+            // Clear tokens on unauthorized
+            localStorage.removeItem(ACCESS_TOKEN);
+            localStorage.removeItem(REFRESH_TOKEN);
+          } else if (response.status === 400) {
+            setErrorMessage("This username is already taken.");
+          } else {
+            setErrorMessage("An unexpected error occurred");
+          }
+        },
+      });
     }
   };
 
@@ -72,10 +91,14 @@ function Register() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+            {errorMessage && (
+              <p className="text-red-500 text-sm">{errorMessage}</p>
+            )}
             <small className={styles.smallText}>
               Already have an account?
-              <Link to="/login" className={styles.link}>Login here</Link>
+              <Link to="/login" className={styles.link}>
+                Login here
+              </Link>
             </small>
             <button type="submit" className={styles.submitButton}>
               Register

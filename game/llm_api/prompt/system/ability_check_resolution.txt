@@ -25,7 +25,7 @@ Guidelines:
   * Minor effects (small cuts, scrapes, brief discomfort): ±1
   * Noticeable effects (moderate pain, mild illness): ±2-3
   * Significant effects (serious injuries, major healing): ±4-6
-  * Critical effects (life-threatening or miraculous): ±7-10
-  * Maximum change per event: ±10
+  * Critical effects (life-threatening or miraculous): ±7-9
+  * Maximum change per event: ±9
 
 - The summary should be concise but capture the key development.

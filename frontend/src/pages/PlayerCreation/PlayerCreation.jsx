@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api";
+import api from "../../utils/api";
 
 import TopBar from "../../components/TopBar";
 import HomeButton from "../../components/HomeButton";

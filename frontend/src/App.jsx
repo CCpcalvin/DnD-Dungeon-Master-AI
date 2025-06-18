@@ -1,6 +1,6 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import api from "./api";
+import api from "./utils/api";
 
 import AuthRoute from "./components/AuthRoute";
 import GuestRoute from "./components/GuestRoute";
@@ -12,11 +12,9 @@ import Logout from "./pages/Logout/Logout";
 import Session from "./pages/Session/Session";
 import MySessions from "./pages/MySessions/MySessions";
 import PlayerCreation from "./pages/PlayerCreation/PlayerCreation";
-
 import TestMenu from "./pages/TestPages/TestMenu";
 import RedirectTest from "./pages/TestPages/RedirectTest";
 import About from "./pages/About/About";
-import Footer from "./components/Footer";
 
 function App() {
   return (

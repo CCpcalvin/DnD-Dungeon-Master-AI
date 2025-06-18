@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 
-import { useNavigate, Link } from "react-router-dom";
 import { isAuthenticated } from "../../utils/auth";
 
 import "../../App.css";
@@ -17,7 +16,6 @@ import LoginRegisterButton from "../../components/LoginRegisterButton";
 import Footer from "../../components/Footer";
 
 function Home() {
-  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
