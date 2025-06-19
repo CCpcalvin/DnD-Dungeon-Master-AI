@@ -8,6 +8,8 @@
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
   - [Using Docker Compose](#using-docker-compose)
+    - [For Window](#for-window)
+    - [For Mac](#for-mac)
   - [Close the server](#close-the-server)
 - [Game](#game)
   - [Start the game](#start-the-game)
@@ -74,9 +76,16 @@ I strongly believe that this project is complex enough for a capstone project.
 ## Prerequisites
 
 - `Docker` and `Docker Compose`
-- `cuda` for `Ollama` to speed up the LLM performance using GPU.
+- For Window: install `cuda` for `Ollama` to speed up the LLM performance using GPU.
+
+- For Mac: install `Ollama` manually
+  - It is because `Docker` does not support GPU ;(.
 
 ## Using Docker Compose
+
+### For Window
+
+Everything is packed in the `Docker`.
 
 1. Open a terminal and run `docker-compose build` to build the images.
 
@@ -87,6 +96,32 @@ I strongly believe that this project is complex enough for a capstone project.
    - After you see the "success" message (you can try to type something and interact with the LLM), you can just type `/bye` to the console to exit.
 
 4. Open `http://localhost:5173` in your browser to start the game.
+
+### For Mac
+
+1. Open a terminal and run `docker-compose build frontend backend` to build the images for `Frontend` and `Backend` only
+
+2. Download `llama3.1:8b` from `Ollama` and run it in the background.
+
+   - Check out the [Ollama](https://ollama.com/) website for more information.
+   
+   - Typically once the `Ollama` is running, you can just type `ollama run llama3.1:8b` to download `llama3.1:8b` as the LLM.
+
+3. Set the environment variable `OLLAMA_URL`
+
+   - You can use `.env` file to set the environment variable `OLLAMA_URL`.
+
+     - You can follows `.env.example` to create the `.env` file.
+
+   - If you just run `Ollama` locally without any configuration, then you can set `OLLAMA_URL` to `http//host.docker.internal:11434/v1`.
+
+   - If you want to change the port for `Ollama`, you can set the environment variable `OLLAMA_HOST`
+
+     - You can simply run `OLLAMA_HOST=0.0.0.0:11435 ollama serve` to run `Ollama` with the port `11435`.
+
+4. Then run `docker-compose up frontend backend` to start the containers.
+
+5. Open `http://localhost:5173` in your browser to start the game.
 
 ## Close the server
 
