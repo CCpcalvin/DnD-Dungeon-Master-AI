@@ -107,11 +107,11 @@ Everything is packed in the `Docker`.
    
    - Typically once the `Ollama` is running, you can just type `ollama run llama3.1:8b` to download `llama3.1:8b` as the LLM.
 
-3. Set the environment variable `OLLAMA_URL`
+3. Configure the environment variable `OLLAMA_URL`
 
    - You can use `.env` file to set the environment variable `OLLAMA_URL`.
 
-     - You can follows `.env.example` to create the `.env` file.
+     - You can follow the `.env.example` to create the `.env` file.
 
    - If you just run `Ollama` locally without any configuration, then you can set `OLLAMA_URL` to `http//host.docker.internal:11434/v1`.
 
