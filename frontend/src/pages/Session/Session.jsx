@@ -1,15 +1,18 @@
 import { useState, useEffect, useReducer, useRef, useCallback } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { TypeAnimation } from "react-type-animation";
 
 import styles from "./Session.module.css";
 
 import TopBar from "../../components/TopBar";
 import HomeButton from "../../components/HomeButton";
 import LogoutButton from "../../components/LogoutButton";
-import { TypeAnimation } from "react-type-animation";
+import Loading from "../../components/Loading";
 
 import { Roles } from "../../constants";
 import SidePanel from "../../components/SidePanel";
+
+import { handleApiError } from "../../utils/apiErrorHandler";
 
 import {
   LoadingIndicator,
@@ -92,6 +95,53 @@ function Session({ api, params = {}, ...props }) {
     }
   }, [state.typingMessage]);
 
+  const handleError = (error) => {
+    handleApiError(error, {
+      onError: (response) => {
+        // Extract status and initialize error message
+        const status = response.status; // Will be undefined if error.response is undefined
+        let errorMessage = "An error occurred while processing your request";
+
+        // Handle 400 Bad Request specifically
+        if (status === 400 && response.data?.error) {
+          errorMessage = response.data.error;
+          setError(errorMessage);
+          dispatch({ type: ActionTypes.REVERT });
+          return;
+        }
+
+        // For other errors, try to get the error message from the response data
+        if (response.data?.error) {
+          errorMessage = response.data.error;
+        } else if (response.message) {
+          errorMessage = response.message;
+        }
+
+        // Set the error in the UI
+        setError(errorMessage);
+
+        // Handle different status codes
+        if (status === 401) {
+          // Unauthorized - redirect to login
+          navigate("/login");
+          return;
+        } else if (status === 403) {
+          // Forbidden - redirect to home
+          navigate("/");
+          return;
+        } else {
+          // Server errors - show alert
+          alert(`Server Error: ${errorMessage}`);
+          navigate("/");
+          return;
+        }
+      },
+    });
+
+    // Revert to the previous state
+    dispatch({ type: ActionTypes.REVERT });
+  };
+
   const handleContinue = async () => {
     if (currentState !== SessionState.AWAIT_CONTINUE) {
       return;
@@ -121,14 +171,7 @@ function Session({ api, params = {}, ...props }) {
 
       setLastSuggestedActions(suggested_actions);
     } catch (error) {
-      console.error("Error getting next floor:", error);
-      alert(
-        `Failed to get next floor: ${
-          error.response?.data?.message || error.message
-        }`
-      );
-      navigate("/");
-      return;
+      handleError(error);
     }
   };
 
@@ -192,47 +235,7 @@ function Session({ api, params = {}, ...props }) {
       // Clear TextBox
       setMessage("");
     } catch (error) {
-      console.error("API Error:", error);
-
-      // Extract status and initialize error message
-      const status = error.response?.status; // Will be undefined if error.response is undefined
-      let errorMessage = "An error occurred while processing your request";
-
-      // Handle 400 Bad Request specifically
-      if (status === 400 && error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-        setError(errorMessage);
-        dispatch({ type: ActionTypes.REVERT });
-        return;
-      }
-
-      // For other errors, try to get the error message from the response data
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      // Set the error in the UI
-      setError(errorMessage);
-
-      // Handle different status codes
-      if (status) {
-        if (status === 401 || status === 403) {
-          // Unauthorized or Forbidden - redirect to login
-          navigate("/login");
-          return;
-        } else if (status >= 500) {
-          // Server errors - show alert
-          alert(`Server Error: ${errorMessage}`);
-        }
-      } else {
-        // Network errors or other non-HTTP errors
-        console.error("Network/Request Error:", errorMessage);
-      }
-
-      // Revert to the previous state
-      dispatch({ type: ActionTypes.REVERT });
+      handleError(error);
     }
   };
 
@@ -320,14 +323,10 @@ function Session({ api, params = {}, ...props }) {
     };
 
     initializeSession();
-  }, [sessionId, initialNarrative, navigate, api]);
+  }, []);
 
   if (isInitializing) {
-    return (
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading session...</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   // Render the chat messages

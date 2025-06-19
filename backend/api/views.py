@@ -1,34 +1,32 @@
-from game.DungeonMaster import DungeonMaster
-from game.classes.EntityClasses import Player
-from game.models.LLMProvider import ollama
-from game.classes.NonCombatFloor import (
-    HandleUserInputError,
-    HandleUserInputEnd,
-    HandleUserInputDefeat,
-    HandleUserInputSuggestedAction,
-)
-
-from django.http import HttpResponse, JsonResponse, HttpRequest
-
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.decorators import api_view, permission_classes
-
-from .serializers import UserSerializer
+import json
 
 from django.contrib.auth.models import User
-from .models import (
-    GameState,
-    GameSession,
-    Role,
-    GameEvent,
-    PlayerInfo,
-    FloorHistoryModel,
-    NonCombatFloorModel,
-)
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from rest_framework import generics
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
-import json
-from .utils import handle_llm_errors, validate_session
+from game.classes.EntityClasses import Player
+from game.classes.NonCombatFloor import (
+    HandleUserInputDefeat,
+    HandleUserInputEnd,
+    HandleUserInputError,
+    HandleUserInputSuggestedAction,
+)
+from game.DungeonMaster import DungeonMaster
+from game.models.LLMProvider import ollama
+
+from .models import (
+    FloorHistoryModel,
+    GameEvent,
+    GameSession,
+    GameState,
+    NonCombatFloorModel,
+    PlayerInfo,
+    Role,
+)
+from .serializers import UserSerializer
+from .utils import handle_llm_errors, handle_unknown_error, validate_session
 
 
 # Create your views here.
@@ -47,129 +45,127 @@ class CreateUserView(generics.CreateAPIView):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@handle_unknown_error
+@handle_llm_errors
 def create_game(request: HttpRequest):
     try:
         # Parse request data
         data = json.loads(request.body)
 
-        if not isinstance(data, dict):
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-        # Validate required fields
-        required_fields = [
-            "player_name",
-            "strength",
-            "dexterity",
-            "constitution",
-            "intelligence",
-            "wisdom",
-            "charisma",
-        ]
-
-        if not all(field in data for field in required_fields):
-            return JsonResponse({"error": "Missing required fields"}, status=400)
-
-        try:
-            player_name = str(data["player_name"])
-            strength = int(data["strength"])
-            dexterity = int(data["dexterity"])
-            constitution = int(data["constitution"])
-            intelligence = int(data["intelligence"])
-            wisdom = int(data["wisdom"])
-            charisma = int(data["charisma"])
-
-        except (ValueError, TypeError):
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-        # Validate attributes
-        attributes = [strength, dexterity, constitution, intelligence, wisdom, charisma]
-        if sum(attributes) > Player.start_attribute_sum:
-            return JsonResponse(
-                {"error": f"Stats sum to more than {Player.start_attribute_sum}"},
-                status=400,
-            )
-
-        if any(attr < Player.min_per_attr for attr in attributes):
-            return JsonResponse(
-                {"error": f"Stats must be at least {Player.min_per_attr}"}, status=400
-            )
-
-        if any(attr > Player.max_per_attr for attr in attributes):
-            return JsonResponse(
-                {"error": f"Stats must be at most {Player.max_per_attr}"}, status=400
-            )
-
-        # Create the session
-        session = GameSession.objects.create(
-            user=request.user,
-            theme="Dungeon Adventure",  # This will be updated by the LLM
-            game_state=GameState.WAITING_FOR_NEXT_FLOOR,
-        )
-
-        # Initialize DM and generate theme
-        dm = DungeonMaster(provider=ollama())
-        background_response = dm.generate_theme()
-        condensed_response = dm.condense_theme(
-            theme=background_response.theme,
-            player_backstory=background_response.player_backstory,
-        )
-
-        # Update session with theme
-        session.theme = condensed_response.theme
-        session.save()
-
-        # Create GameEvent for the narrative
-        combined_content = (
-            f"{background_response.theme} "
-            f"{background_response.player_backstory} "
-            f"{background_response.player_motivation}"
-        )
-        GameEvent.objects.create(
-            session=session, role=Role.NARRATOR, content=combined_content
-        )
-
-        # Create player with all attributes
-        PlayerInfo.objects.create(
-            session=session,
-            player_name=player_name,
-            description=condensed_response.player_backstory,
-            strength=strength,
-            dexterity=dexterity,
-            constitution=constitution,
-            intelligence=intelligence,
-            wisdom=wisdom,
-            charisma=charisma,
-            current_health=Player.start_health,
-            max_health=Player.start_health,
-        )
-
-        # Initialize game objects
-        floor_history_model = FloorHistoryModel.objects.create(
-            session=session, content=[]
-        )
-        NonCombatFloorModel.objects.create(
-            session=session, floor_history_model=floor_history_model
-        )
-
-        return JsonResponse(
-            {
-                "session_id": session.pk,
-                "narrative": combined_content,
-                "state": session.game_state,
-            }
-        )
-
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    if not isinstance(data, dict):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    # Validate required fields
+    required_fields = [
+        "player_name",
+        "strength",
+        "dexterity",
+        "constitution",
+        "intelligence",
+        "wisdom",
+        "charisma",
+    ]
+
+    if not all(field in data for field in required_fields):
+        return JsonResponse({"error": "Missing required fields"}, status=400)
+
+    try:
+        player_name = str(data["player_name"])
+        strength = int(data["strength"])
+        dexterity = int(data["dexterity"])
+        constitution = int(data["constitution"])
+        intelligence = int(data["intelligence"])
+        wisdom = int(data["wisdom"])
+        charisma = int(data["charisma"])
+
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    # Validate attributes
+    attributes = [strength, dexterity, constitution, intelligence, wisdom, charisma]
+    if sum(attributes) > Player.start_attribute_sum:
+        return JsonResponse(
+            {"error": f"Stats sum to more than {Player.start_attribute_sum}"},
+            status=400,
+        )
+
+    if any(attr < Player.min_per_attr for attr in attributes):
+        return JsonResponse(
+            {"error": f"Stats must be at least {Player.min_per_attr}"}, status=400
+        )
+
+    if any(attr > Player.max_per_attr for attr in attributes):
+        return JsonResponse(
+            {"error": f"Stats must be at most {Player.max_per_attr}"}, status=400
+        )
+
+    # Create the session
+    session = GameSession.objects.create(
+        user=request.user,
+        theme="Dungeon Adventure",  # This will be updated by the LLM
+        game_state=GameState.WAITING_FOR_NEXT_FLOOR,
+    )
+
+    # Initialize DM and generate theme
+    dm = DungeonMaster(provider=ollama())
+    background_response = dm.generate_theme()
+    condensed_response = dm.condense_theme(
+        theme=background_response.theme,
+        player_backstory=background_response.player_backstory,
+    )
+
+    # Update session with theme
+    session.theme = condensed_response.theme
+    session.save()
+
+    # Create GameEvent for the narrative
+    combined_content = (
+        f"{background_response.theme} "
+        f"{background_response.player_backstory} "
+        f"{background_response.player_motivation}"
+    )
+    GameEvent.objects.create(
+        session=session, role=Role.NARRATOR, content=combined_content
+    )
+
+    # Create player with all attributes
+    PlayerInfo.objects.create(
+        session=session,
+        player_name=player_name,
+        description=condensed_response.player_backstory,
+        strength=strength,
+        dexterity=dexterity,
+        constitution=constitution,
+        intelligence=intelligence,
+        wisdom=wisdom,
+        charisma=charisma,
+        current_health=Player.start_health,
+        max_health=Player.start_health,
+    )
+
+    # Initialize game objects
+    floor_history_model = FloorHistoryModel.objects.create(session=session, content=[])
+    NonCombatFloorModel.objects.create(
+        session=session, floor_history_model=floor_history_model
+    )
+
+    return JsonResponse(
+        {
+            "session_id": session.pk,
+            "narrative": combined_content,
+            "state": session.game_state,
+        }
+    )
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-@validate_session
+@handle_unknown_error
 @handle_llm_errors
+@validate_session
 def new_floor(request: HttpRequest, session_id: int, session: GameSession):
     if session.game_state != GameState.WAITING_FOR_NEXT_FLOOR:
         return JsonResponse(
@@ -210,8 +206,9 @@ def new_floor(request: HttpRequest, session_id: int, session: GameSession):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-@validate_session
+@handle_unknown_error
 @handle_llm_errors
+@validate_session
 def player_input(request: HttpRequest, session_id: int, session: GameSession):
     if session.game_state != GameState.IN_PROGRESS:
         return JsonResponse({"error": "Cannot interact in this state"}, status=400)

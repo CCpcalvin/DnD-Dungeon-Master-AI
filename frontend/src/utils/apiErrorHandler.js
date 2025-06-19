@@ -7,14 +7,21 @@
 export const handleApiError = (error, { onError } = {}) => {
   console.error("API Error:", error);
 
-  // Handle network/server errors
+  // Handle backend server errors
   if (!error.response) {
     alert("No response from backend server. Please check your connection.");
     return;
   }
 
+  // Handle network errors
   if (error.code === "ERR_NETWORK") {
     alert("Network error. Please check your internet connection.");
+    return;
+  }
+
+  // Handle LLM server errors
+  if (error.response.status === 503) {
+    alert("LLM server is currently unavailable. Please try again later.")
     return;
   }
 

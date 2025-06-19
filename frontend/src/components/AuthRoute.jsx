@@ -3,6 +3,8 @@ import { Navigate } from "react-router-dom";
 
 import { isAuthenticated } from "../utils/auth";
 
+import Loading from "./Loading";
+
 function AuthRoute({ children }) {
   const [isAuthorized, setIsAuthorized] = useState(null);
 
@@ -16,7 +18,7 @@ function AuthRoute({ children }) {
   }, []);
 
   if (isAuthorized === null) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   return isAuthorized ? children : <Navigate to="/login" />;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
+import { handleApiError } from "../../utils/apiErrorHandler";
 
 import TopBar from "../../components/TopBar";
 import HomeButton from "../../components/HomeButton";
@@ -63,8 +64,12 @@ function PlayerCreation() {
         state: { initialNarrative: narrative },
       });
     } catch (error) {
-      console.error("Error creating game:", error);
-      // Handle error (e.g., show error message to user)
+      handleApiError(error, {
+        onError: (response) => {
+          console.error("Error creating game:", error);
+          // Handle error (e.g., show error message to user)
+        },
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -73,8 +78,8 @@ function PlayerCreation() {
   return (
     <div className="min-h-screen bg-gray-900">
       <TopBar>
-        <HomeButton />
-        <LogoutButton />
+        <HomeButton size="sm" />
+        <LogoutButton size="sm" />
       </TopBar>
 
       <Container>

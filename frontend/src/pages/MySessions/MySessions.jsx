@@ -8,6 +8,7 @@ import HomeButton from "../../components/HomeButton";
 import LogoutButton from "../../components/LogoutButton";
 import NewAdventureButton from "../../components/NewAdventureButton";
 import Container from "../../components/Container";
+import Loading from "../../components/Loading";
 
 import styles from "./MySessions.module.css";
 
@@ -41,7 +42,7 @@ function MySessions() {
   }, []);
 
   if (loading) {
-    return <div>Loading sessions...</div>;
+    return <Loading />;
   }
 
   if (error) {

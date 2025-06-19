@@ -72,7 +72,7 @@ class OpenAILikeProvider(LLMProvider):
             except Exception as e:
                 raise e
 
-        raise Exception("Failed to get completion after retries")
+        raise e
 
 
 class ollama(OpenAILikeProvider):

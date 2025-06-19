@@ -34,4 +34,9 @@ export const testCases = [
     name: "Testing the Submit and Fail Feature",
     component: () => import("./TestSubmitFail/TestSubmitFail"),
   },
+  {
+    id: "test-loading-animation",
+    name: "Testing the Loading Animation Feature",
+    component: () => import("./TestLoadingAnimation/TestLoadingAnimation"),
+  },
 ];

@@ -30,8 +30,12 @@ export const InputArea = ({
         return "Type your action...";
       case SessionState.AWAIT_CONTINUE:
         return "Click the continue button";
-      default:
+      case SessionState.LOADING:
+        return message;
+      case SessionState.COMPLETED:
         return "You are defeated.";
+      default:
+        return "An unknown error occurred.";
     }
   };
 
@@ -63,14 +67,24 @@ export const InputArea = ({
     <div className="border-t border-gray-700 pt-4">
       {error && (
         <div className="flex items-center text-red-400 text-sm mb-2 px-3 py-2 bg-red-900/50 rounded-lg">
-          <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+          <svg
+            className="w-5 h-5 mr-2 flex-shrink-0"
+            fill="currentColor"
+            viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+              clipRule="evenodd"
+            />
           </svg>
           {error}
         </div>
       )}
       <form onSubmit={onSubmit} className="flex gap-2">
-        <div className={`flex-1 relative ${error ? 'ring-2 ring-red-500 rounded-lg' : ''}`}>
+        <div
+          className={`flex-1 relative ${
+            error ? "ring-2 ring-red-500 rounded-lg" : ""
+          }`}>
           <input
             ref={inputRef}
             type="text"
@@ -82,8 +96,12 @@ export const InputArea = ({
                 ? "cursor-wait"
                 : isDisabled
                 ? "cursor-not-allowed"
-                : error ? "focus:ring-red-500" : "focus:ring-green-500"
-            } opacity-${isDisabled || isLoading ? 50 : 100} ${error ? 'border-red-500' : 'border-transparent'} rounded-lg`}
+                : error
+                ? "focus:ring-red-500"
+                : "focus:ring-green-500"
+            } opacity-${isDisabled || isLoading ? 50 : 100} ${
+              error ? "border-red-500" : "border-transparent"
+            } rounded-lg`}
             placeholder={getPlaceholder()}
           />
         </div>

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaChevronRight, FaTimes } from "react-icons/fa";
 import styles from "./SidePanel.module.css";
 
-const SidePanel = ({ isOpen, onToggle, sessionId, api, children }) => {
+function SidePanel({ isOpen, onToggle, sessionId, api, children }) {
   const [sessionInfo, setSessionInfo] = useState(null);
   const [playerInfo, setPlayerInfo] = useState(null);
 
