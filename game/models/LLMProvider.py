@@ -82,7 +82,10 @@ class ollama(OpenAILikeProvider):
     default_model = "llama3.1:8B"
 
     def __init__(self):
-        self.client = OpenAI(base_url="http://ollama:11435/v1", api_key="ollama")
+        self.client = OpenAI(
+            base_url=os.getenv('OLLAMA_URL', 'http://ollama:11435/v1'),
+            api_key="ollama"
+        )
 
     def get_completion(
         self, ResponseModel: Type[T], model: str = default_model, **kwargs

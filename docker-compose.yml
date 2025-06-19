@@ -23,7 +23,7 @@ services:
             - .:/app
         ports:
             - "8000:8000"
-        command: sh -c "cd /app/backend && dos2unix ./entrypoint.sh && ./entrypoint.sh"
+        command: sh -c "cd /app/backend && dos2unix ./entrypoint.sh && chmod +x ./entrypoint.sh && ./entrypoint.sh"
 
     frontend:
         build:
@@ -33,7 +33,7 @@ services:
             - .:/app
         ports:
             - "5173:5173"
-        command: sh -c "cd /app/frontend && dos2unix ./entrypoint.sh && ./entrypoint.sh"
+        command: sh -c "cd /app/frontend && dos2unix ./entrypoint.sh && chmod +x ./entrypoint.sh && ./entrypoint.sh"
 
 volumes:
     ollama:
