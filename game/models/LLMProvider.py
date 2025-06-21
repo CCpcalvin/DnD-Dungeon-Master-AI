@@ -123,7 +123,6 @@ class MistralAIProvider(OpenRouterProvider):
 
 class Llama_3_3_8B_Instruct(OpenRouterProvider):
     """
-    In theory, faster than Llama 3.3 8B, but not that reliable
     ## Important!
         - The response format does not work. I don't know why
         - Can only use structued output (which is actually nice)

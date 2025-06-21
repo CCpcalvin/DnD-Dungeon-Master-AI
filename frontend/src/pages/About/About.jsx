@@ -47,7 +47,7 @@ function About() {
           <div className="text-gray-300 space-y-4 leading-relaxed">
             <p className="text-gray-100 font-medium">
               Welcome to a unique Dungeons & Dragons experience where an AI
-              serves as your Game Master. In this text-based adventure, you'll
+              serves as your Dungeon Master. In this text-based adventure, you'll
               explore mysterious locations, solve puzzles, and make crucial
               decisions that shape your journey. Your goal is simple: climb the
               tower, collect treasures, and survive the dangers that lurk
