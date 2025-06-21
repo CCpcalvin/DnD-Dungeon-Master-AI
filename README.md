@@ -2,9 +2,10 @@
 
 - [Table of Contents](#table-of-contents)
 - [Introduction](#introduction)
-- [Distinctiveness and Complexity](#distinctiveness-and-complexity)
-  - [Distinctiveness](#distinctiveness)
-  - [Complexity](#complexity)
+- [For CS50W Grading](#for-cs50w-grading)
+  - [Distinctiveness and Complexity](#distinctiveness-and-complexity)
+    - [Distinctiveness](#distinctiveness)
+    - [Complexity](#complexity)
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
   - [Using Docker Compose](#using-docker-compose)
@@ -24,9 +25,11 @@ I developed this project because I was inspired by _Baldur's Gate 3_ (BG3), whic
 
 I initially underestimated the complexity of this project. To make it suitable as a capstone project, I had to scale back many features. Nevertheless, creating a DnD-style web game required me to learn numerous technologies beyond the course curriculum, including implementing responsive UIs with `React Native`, integrating `Ollama` and `OpenAI` for local LLM communication, and mastering effective LLM prompting techniques.
 
-# Distinctiveness and Complexity
+# For CS50W Grading
 
-## Distinctiveness
+## Distinctiveness and Complexity
+
+### Distinctiveness
 
 This project stands out from others in the course as a web-based game application featuring a responsive UI. It clearly differs from:
 
@@ -35,7 +38,7 @@ This project stands out from others in the course as a web-based game applicatio
 - an e-commerce website
 - a mail application or a social network application
 
-## Complexity
+### Complexity
 
 This project consists of several key components:
 
@@ -104,7 +107,7 @@ Everything is packed in the `Docker`.
 2. Download `llama3.1:8b` from `Ollama` and run it in the background.
 
    - Check out the [Ollama](https://ollama.com/) website for more information.
-   
+
    - Typically once the `Ollama` is running, you can just type `ollama run llama3.1:8b` to download `llama3.1:8b` as the LLM.
 
 3. Configure the environment variable `OLLAMA_URL`
