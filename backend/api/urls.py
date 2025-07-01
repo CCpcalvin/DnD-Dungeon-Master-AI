@@ -1,45 +1,36 @@
 from django.urls import path
-
-from .views import (
-    index,
-    CreateUserView,
-    create_game,
-    player_input,
-    new_floor,
-    get_session_info,
-    get_sessions,
-    get_events,
-    get_game_state,
-)
-
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from . import views
+
 urlpatterns = [
-    path("", index, name="index"),
+    path("", views.index, name="index"),
     # User
-    path("user/register", CreateUserView.as_view(), name="register"),
+    path("user/register", views.CreateUserView.as_view(), name="register"),
     path("user/token", TokenObtainPairView.as_view(), name="get_token"),
-    path("user/token/refresh", TokenRefreshView.as_view(), name="refrest_token"),
+    path("user/token/refresh", TokenRefreshView.as_view(), name="refresh_token"),
     # Game
-    path("session/create-game", create_game, name="create_game"),
+    path("session/create-game", views.create_game, name="create_game"),
     path(
         "session/<int:session_id>/new-floor",
-        new_floor,
+        views.new_floor,
         name="new_floor",
     ),
     path(
         "session/<int:session_id>/player-input",
-        player_input,
+        views.player_input,
         name="player_input",
     ),
     path(
         "session/<int:session_id>/get-session-info",
-        get_session_info,
+        views.get_session_info,
         name="get_session_info",
     ),
-    path("get-sessions", get_sessions, name="get_sessions"),
-    path("session/<int:session_id>/get-events", get_events, name="get_events"),
+    path("get-sessions", views.get_sessions, name="get_sessions"),
+    path("session/<int:session_id>/get-events", views.get_events, name="get_events"),
     path(
-        "session/<int:session_id>/get-game-state", get_game_state, name="get_game_state"
+        "session/<int:session_id>/get-game-state",
+        views.get_game_state,
+        name="get_game_state",
     ),
 ]

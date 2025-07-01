@@ -1,6 +1,6 @@
 import json
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
@@ -16,15 +16,7 @@ from game.classes.NonCombatFloor import (
 from game.DungeonMaster import DungeonMaster
 from game.models.LLMProvider import ollama
 
-from .models import (
-    FloorHistoryModel,
-    GameEvent,
-    GameSession,
-    GameState,
-    NonCombatFloorModel,
-    PlayerInfo,
-    Role,
-)
+from .models import *  # Import all models
 from .serializers import UserSerializer
 from .utils import handle_llm_errors, handle_unknown_error, validate_session
 
@@ -38,7 +30,7 @@ def index(request: HttpRequest):
 
 
 class CreateUserView(generics.CreateAPIView):
-    queryset = User.objects.all()
+    queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 

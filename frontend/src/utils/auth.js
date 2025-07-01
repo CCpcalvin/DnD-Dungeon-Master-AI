@@ -20,6 +20,7 @@ const refreshAccessToken = async () => {
   } catch (error) {
     handleApiError(error, {
       onError: (response) => {
+        logout();
         alert("An authentication error occurred. Please try again.");
       },
     });

@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import User  # Input Users model
+from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 from game.classes.EntityClasses import Player
 from game.classes.FloorHistory import FloorHistory
@@ -8,6 +9,16 @@ from game.classes.NonCombatFloor import NonCombatFloor
 from game.classes.Progression import Progression
 from game.models.LLMProvider import ollama
 from game.DungeonMaster import DungeonMaster
+
+
+class CustomUser(AbstractUser):
+    """
+    Custom User model that extends the default User model with additional fields.
+    """
+    last_modified = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.username
 
 
 class GameState(models.TextChoices):
@@ -22,7 +33,7 @@ class GameSession(models.Model):
     Model to represent a game session.
     """
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Who owns the session
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)  # Who owns the session
     created_at = models.DateTimeField(auto_now_add=True)
     theme = models.CharField(
         max_length=255, blank=True, null=True

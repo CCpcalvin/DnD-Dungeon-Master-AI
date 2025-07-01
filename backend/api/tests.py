@@ -1,19 +1,131 @@
 import os
+from unittest.mock import patch
+
 import django
 
 # Set up Django settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
-from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta
+
+from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.utils import timezone
+from freezegun import freeze_time
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from django.contrib.auth.models import User
+from .constants import USER_INACTIVITY_EXPIRY_INTERVAL
+from .models import GameSession, GameState
 
-from .models import GameState, GameSession
+User = get_user_model()
 
 
 # Create your tests here.
+class CustomUserTestCase(APITestCase):
+    def test_user_registration_creates_last_modified(self):
+        """Test that user registration creates a user with last_modified field."""
+        test_time = timezone.now()
+        user_data = {
+            "username": "newuser",
+            "password": "testpass123",
+            "email": "test@example.com",
+        }
+
+        with freeze_time(test_time):
+            response = self.client.post("/api/user/register", user_data)
+            self.assertEqual(response.status_code, 201)
+
+            # Check if user was created with last_modified
+            user = User.objects.get(username="newuser")
+            self.assertIsNotNone(user.last_modified)
+            self.assertEqual(user.last_modified, test_time)
+
+    @freeze_time("2025-01-01 12:00:00")
+    def test_authentication_updates_last_modified(self):
+        """Test that authentication updates the last_modified field."""
+        user = User.objects.create_user(username="testuser", password="testpass123")
+        initial_last_modified = user.last_modified
+
+        # Move time forward and authenticate
+        response = self.client.post(
+            "/api/user/token", {"username": "testuser", "password": "testpass123"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+
+        # Get the token
+        token = response.data["access"]
+
+        # Make an authenticated request
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+        # Make any authenticated request in the next frozen time
+        with freeze_time("2025-01-01 12:00:15"):
+            response = self.client.get("/api/get-sessions")
+
+            # Refresh user from db
+            user.refresh_from_db()
+
+            # Check that last_modified was updated or not
+            # It is expected not to update
+            self.assertEqual(user.last_modified, initial_last_modified)
+
+        # Make any authenticated request in the next frozen time
+        with freeze_time("2025-01-01 12:01:15"):
+            response = self.client.get("/api/get-sessions")
+
+            # Refresh user from db
+            user.refresh_from_db()
+
+            # Check that last_modified was updated or not
+            # It is expected to update
+            self.assertEqual(user.last_modified, timezone.now())
+
+    @freeze_time("2025-01-31 12:00:00")
+    def test_cleanup_old_users(self):
+        """Test that the cleanup_old_users command works correctly."""
+        old_time = timezone.now() - USER_INACTIVITY_EXPIRY_INTERVAL - timedelta(days=1)
+        with freeze_time(old_time):
+            # Create old user
+            old_user = User.objects.create_user(
+                username="olduser", password="testpass123"
+            )
+
+            # Create superuser
+            superuser = User.objects.create_superuser(
+                username="adminuser", password="adminpass", email="admin@example.com"
+            )
+
+        # Create a new user
+        new_user = User.objects.create_user(username="newuser", password="testpass123")
+
+        # Verify initial state
+        self.assertTrue(User.objects.filter(username="olduser").exists())
+        self.assertTrue(User.objects.filter(username="newuser").exists())
+        self.assertTrue(User.objects.filter(username="adminuser").exists())
+
+        # Run the cleanup command
+        call_command("cleanup_old_users", "--force")
+
+        # Check results
+        self.assertFalse(
+            User.objects.filter(username="olduser").exists(),
+            "Old user should be deleted as it was last modified before the expiry threshold",
+        )
+        self.assertTrue(
+            User.objects.filter(username="newuser").exists(),
+            "New user should be kept as it was recently active",
+        )
+        self.assertTrue(
+            User.objects.filter(username="adminuser").exists(),
+            "Superuser should be kept even if last_modified is old",
+        )
+
+
 class AuthUserGameSessionAPITest(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testuser", password="testpass")
@@ -312,10 +424,10 @@ class AuthUserGameSessionAPITest(APITestCase):
 
 
 class NonAuthUserGameSessionAPITest(APITestCase):
+    """
+    This test is for testing about the creation of session for non-authenticated user.
+    """
+
     def test_create_session(self):
-        """
-        This test is for testing about the creation of session for non-autheroized user.
-        """
-        # Simulate user submitting a POST to the session_new endpoint
-        response = self.client.post("/api/session/create-game", {}, format="json")
+        response = self.client.post("/api/session/create-game")
         self.assertEqual(response.status_code, 401)

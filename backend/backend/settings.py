@@ -73,6 +73,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "api.middleware.UpdateLastModifiedMiddleware",  # Custom middleware to update last_modified
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -150,6 +151,9 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Custom user model
+AUTH_USER_MODEL = "api.CustomUser"
 
 # Now include my game module
 import sys
