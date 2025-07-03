@@ -1,0 +1,55 @@
+# Stage 1: Build Stage
+FROM python:3.10-slim AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy the requirements.txt first to take advantage of caching
+COPY requirements.txt .
+
+# Set environment variables
+ENV DJANGO_DEBUG=0
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install python libraries
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install gunicorn
+RUN pip install gunicorn
+
+# Stage 2: Production Stage
+FROM python:3.10-slim AS production
+
+# Create a folder for the app
+RUN mkdir /app
+
+# Set environment variables
+ENV DJANGO_DEBUG=0
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Copy the Python dependencies
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+# Create a user 
+RUN useradd -m -r appuser && \
+    chown -R appuser:appuser /app
+
+# Set working directory
+WORKDIR /app
+
+# Switch to the appuser
+USER appuser
+
+# Copy the necessary files
+COPY --chown=appuser:appuser backend backend
+COPY --chown=appuser:appuser game game
+
+# Ensure the `entrypoint.prod.sh` is executable
+RUN chmod +x /app/backend/entrypoint.prod.sh
+
+# Run the entrypoint script
+CMD ["/app/backend/entrypoint.prod.sh"]

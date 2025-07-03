@@ -15,17 +15,14 @@ services:
                           count: 1
                           capabilities: [gpu]
 
-    backend:
+    backend-prod:
         build:
             context: .
-            dockerfile: backend/Dockerfile
-        volumes:
-            - .:/app
+            dockerfile: backend/Dockerfile.prod
         ports:
-            - "8000:8000"
+            - "8001:8001"
         env_file:
-            - ./.env.dev
-        command: sh -c "cd /app/backend && dos2unix ./entrypoint.sh && chmod +x ./entrypoint.sh && ./entrypoint.sh"
+            - ./.env.prod
 
     frontend:
         build:
@@ -36,7 +33,7 @@ services:
         ports:
             - "5173:5173"
         env_file:
-            - ./.env.dev
+            - ./.env.prod
         command: sh -c "cd /frontend && dos2unix ./entrypoint.sh && chmod +x ./entrypoint.sh && ./entrypoint.sh"
 
 volumes:

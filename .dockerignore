@@ -6,6 +6,8 @@ __pycache__/
 *.pyd
 .Python
 .env
+.env.dev
+.env.prod
 
 # Git
 .git/
@@ -23,3 +25,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
