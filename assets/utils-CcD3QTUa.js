@@ -1,0 +1,1 @@
+async function r(){const t=300+Math.random()*500;return new Promise(e=>setTimeout(e,t))}function o(t="Page not found"){return{response:{status:404,data:{status:"error",message:t,code:404,timestamp:new Date().toISOString()}},isAxiosError:!0}}export{r as N,o as P};
