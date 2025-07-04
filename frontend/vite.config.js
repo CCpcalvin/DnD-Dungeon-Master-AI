@@ -10,5 +10,5 @@ export default defineConfig({
       usePolling: true, // Use polling for file changes
     },
   },
-  base: "/DnD-Dungeon-Master-AI/frontend",
+  base: "/DnD-Dungeon-Master-AI/",
 });
