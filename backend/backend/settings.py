@@ -170,8 +170,9 @@ LOGGING = {
 # Add the game module to Python path
 import sys
 
-ROOT_DIR = BASE_DIR.parent
-sys.path.append(str(ROOT_DIR))
+GAME_PATH_FROM_BACKEND = os.environ.get("GAME_PATH_FROM_BACKEND", "..")
+GAME_DIR = BASE_DIR / GAME_PATH_FROM_BACKEND
+sys.path.append(str(GAME_DIR))
 
 # Development Settings
 if DEBUG:

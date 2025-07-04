@@ -2,10 +2,6 @@
 
 - [Table of Contents](#table-of-contents)
 - [Introduction](#introduction)
-- [For CS50W Grading](#for-cs50w-grading)
-  - [Distinctiveness and Complexity](#distinctiveness-and-complexity)
-    - [Distinctiveness](#distinctiveness)
-    - [Complexity](#complexity)
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
   - [Using Docker Compose](#using-docker-compose)
@@ -24,55 +20,6 @@ Hi! This is my final project for "CS50's Web Programming with Python and JavaScr
 I developed this project because I was inspired by _Baldur's Gate 3_ (BG3), which I've been thoroughly enjoying. One of BG3's greatest strengths is its freedom—players can do almost anything they want, and the game dynamically adapts to their actions. While BG3 doesn't offer truly infinite choices (as you're still limited to pre-programmed options), it provides an impressive amount of flexibility. This led me to wonder: what if we could create a game with infinite choices, where the game could adapt to any player's action? This project tries to explore the concept of using AI to respond to player actions while maintaining game rules and narrative coherence. My original vision was to create an AI that functions like a Game Master (GM) in a tabletop role-playing game. The concept involves providing the AI with complete story and puzzle details, allowing it to guide players through the world. The AI would then evaluate player actions through dice rolls and determine appropriate consequences—essentially serving as a GM.
 
 I initially underestimated the complexity of this project. To make it suitable as a capstone project, I had to scale back many features. Nevertheless, creating a DnD-style web game required me to learn numerous technologies beyond the course curriculum, including implementing responsive UIs with `React Native`, integrating `Ollama` and `OpenAI` for local LLM communication, and mastering effective LLM prompting techniques.
-
-# For CS50W Grading
-
-## Distinctiveness and Complexity
-
-### Distinctiveness
-
-This project stands out from others in the course as a web-based game application featuring a responsive UI. It clearly differs from:
-
-- a search page
-- wiki application
-- an e-commerce website
-- a mail application or a social network application
-
-### Complexity
-
-This project consists of several key components:
-
-- `Ollama`
-
-  - The local LLM server for the game. It is used to generate the story, handle player input etc.
-
-- `Game` (located in `game`)
-
-  - Handle the game logic and communication with `Ollama`.
-
-- `Backend` (located in `backend`)
-
-  - Handle the communication between the `Game` and `Frontend`.
-
-- `Frontend` (located in `frontend`)
-  - Handle the frontend logic and communication with `Backend`.
-
-If we only focus on the web development parts i.e. `Backend` and `Frontend`, we already have
-
-- `Backend`
-
-  - I have used several `Model`, such as `GameSession`, `GameEvent`, `PlayerInfo`, etc to store the game state, player info, floor history etc, such that we can load the entire game state from the database.
-  - Make use of `Django REST framework` to handle API calls
-  - Make use of `JWT` to handle user authentication, since we are using `React Native` as the frontend
-
-- `Frontend`
-  - This session entirely is already beyond this course (maybe it is kind of relevant to the `React` session in lecture 6)
-  - Obviously `JavaScript` is used to handle the frontend logic. For example, I use `JavaScript` to handle `JWT` authentication
-  - Responsive UI with `Tailwind CSS`
-  - We have `SidePanel` that can slide in and out; we have `TypeAnimation` to simulate typing effect and much more
-  - The container and the text will be collapsed if the viewport is too narrow, so it is mobile-responsive.
-
-I strongly believe that this project is complex enough for a capstone project.
 
 # Installation
 
