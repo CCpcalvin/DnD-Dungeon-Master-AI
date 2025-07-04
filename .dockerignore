@@ -31,3 +31,6 @@ lerna-debug.log*
 .vscode/
 *.swp
 *.swo
+
+# Project specific
+check_leak.ps1

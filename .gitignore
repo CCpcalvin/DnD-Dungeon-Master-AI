@@ -56,3 +56,4 @@ env/
 
 # Project specific
 dnd_draft/__pycache__/
+check_leak.ps1
