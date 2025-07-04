@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Change to the backend directory
-cd /app/backend
+cd /backend
 
 # Run migrations automatically
 if [ ! -f "db.sqlite3" ]; then

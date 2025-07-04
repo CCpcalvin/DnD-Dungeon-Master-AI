@@ -2,7 +2,7 @@
 FROM python:3.10-slim AS builder
 
 # Set working directory
-WORKDIR /app
+WORKDIR /backend
 
 # Copy the requirements.txt first to take advantage of caching
 COPY requirements.txt .
@@ -23,7 +23,7 @@ RUN pip install gunicorn
 FROM python:3.10-slim AS production
 
 # Create a folder for the app
-RUN mkdir /app
+RUN mkdir /backend
 
 # Set environment variables
 ENV DJANGO_DEBUG=0
@@ -36,20 +36,19 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # Create a user 
 RUN useradd -m -r appuser && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /backend
 
 # Set working directory
-WORKDIR /app
+WORKDIR /backend
 
 # Switch to the appuser
 USER appuser
 
 # Copy the necessary files
-COPY --chown=appuser:appuser backend backend
-COPY --chown=appuser:appuser game game
+COPY --chown=appuser:appuser . .
 
 # Ensure the `entrypoint.prod.sh` is executable
-RUN chmod +x /app/backend/entrypoint.prod.sh
+RUN chmod +x /backend/entrypoint.prod.sh
 
 # Run the entrypoint script
-CMD ["/app/backend/entrypoint.prod.sh"]
+CMD ["/backend/entrypoint.prod.sh"]
