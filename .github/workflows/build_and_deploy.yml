@@ -13,6 +13,15 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
 
+      - name: Create .env file
+        working-directory: ./frontend
+        run: |
+          echo "VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}" > .env
+          echo "VITE_HOME_PAGE=${{ secrets.VITE_HOME_PAGE }}" >> .env
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+          echo "VITE_ACCESS_TOKEN=${{ secrets.VITE_ACCESS_TOKEN }}" >> .env
+          echo "VITE_REFRESH_TOKEN=${{ secrets.VITE_REFRESH_TOKEN }}" >> .env
+
       - name: Install and Build 🔧 
         working-directory: ./frontend
         run: |
