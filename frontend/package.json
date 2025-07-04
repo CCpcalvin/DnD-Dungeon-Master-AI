@@ -1,5 +1,6 @@
 {
   "name": "frontend",
+  "homepage": "https://ccpcalvin.github.io/DnD-Dungeon-Master-AI",
   "private": true,
   "version": "0.0.0",
   "type": "module",
