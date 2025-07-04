@@ -17,8 +17,8 @@ services:
 
     backend-prod:
         build:
-            context: .
-            dockerfile: backend/Dockerfile.prod
+            context: backend
+            dockerfile: Dockerfile.prod
         ports:
             - "8001:8001"
         env_file:
@@ -26,8 +26,8 @@ services:
 
     frontend:
         build:
-            context: .
-            dockerfile: frontend/Dockerfile
+            context: frontend
+            dockerfile: Dockerfile
         volumes:
             - ./frontend:/frontend
         ports:

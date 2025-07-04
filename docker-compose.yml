@@ -17,8 +17,8 @@ services:
 
     backend:
         build:
-            context: .
-            dockerfile: backend/Dockerfile
+            context: backend
+            dockerfile: Dockerfile
         volumes:
             - .:/app
         ports:
@@ -29,8 +29,8 @@ services:
 
     frontend:
         build:
-            context: .
-            dockerfile: frontend/Dockerfile
+            context: frontend 
+            dockerfile: Dockerfile
         volumes:
             - ./frontend:/frontend
         ports:
