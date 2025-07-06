@@ -40,8 +40,8 @@ venv/
 ENV/
 env/
 .env
-.env.dev
-.env.prod
+.env.development
+.env.production
 
 # IDE
 .idea/
