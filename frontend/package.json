@@ -9,9 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist -b gh-pages"
+    "deploy": "gh-pages -d dist"
   },
-  "homepage": ".",
+  "homepage": "https://ccpcalvin.github.io/DnD-Dungeon-Master-AI/",
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.8",
     "axios": "^1.9.0",
