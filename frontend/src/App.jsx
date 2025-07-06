@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import api from "./utils/api";
 
 import AuthRoute from "./components/AuthRoute";
@@ -17,10 +17,9 @@ import RedirectTest from "./pages/TestPages/RedirectTest";
 import About from "./pages/About/About";
 
 function App() {
-  const basename = import.meta.env.VITE_BASE_URL || "/";
 
   return (
-    <BrowserRouter basename={basename}>
+    <HashRouter>
       <div className="flex flex-col min-h-screen bg-gray-900">
         <div className="flex-grow">
           <Routes>
@@ -85,7 +84,7 @@ function App() {
           </Routes>
         </div>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
