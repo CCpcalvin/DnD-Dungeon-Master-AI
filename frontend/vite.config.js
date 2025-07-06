@@ -1,10 +1,13 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig(({ command, mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-  const env = loadEnv(mode, process.cwd(), '');
+  // Go up one level from frontend directory to get to the root
+  const rootDir = path.resolve(__dirname, '..');
+
+  // Load env file from root directory
+  const env = loadEnv(mode, rootDir, '');
   
   // Now you can access the environment variables via env.VARIABLE_NAME
   const basename = env.VITE_BASE_URL || "/";
