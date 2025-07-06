@@ -1,5 +1,5 @@
 import "./App.css";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import api from "./utils/api";
 
 import AuthRoute from "./components/AuthRoute";
@@ -19,7 +19,7 @@ import About from "./pages/About/About";
 function App() {
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <div className="flex flex-col min-h-screen bg-gray-900">
         <div className="flex-grow">
           <Routes>
@@ -84,7 +84,7 @@ function App() {
           </Routes>
         </div>
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 
