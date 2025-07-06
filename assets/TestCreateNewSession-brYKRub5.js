@@ -1,0 +1,1 @@
+import{j as e,S as i}from"./index-BBZjjt-0.js";import{N as t,P as a}from"./utils-CcD3QTUa.js";const o=()=>({get:async r=>(await t(),a()),post:async r=>(await t(),a())});function u(){return e.jsx(i,{initialNarrative:"Short narrative.",api:o()})}export{u as default};
