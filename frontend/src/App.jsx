@@ -17,9 +17,10 @@ import RedirectTest from "./pages/TestPages/RedirectTest";
 import About from "./pages/About/About";
 
 function App() {
+  const basename = import.meta.env.VITE_BASE_URL || "/";
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <div className="flex flex-col min-h-screen bg-gray-900">
         <div className="flex-grow">
           <Routes>
