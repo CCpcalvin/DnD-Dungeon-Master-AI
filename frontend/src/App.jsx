@@ -18,7 +18,7 @@ import About from "./pages/About/About";
 
 function App() {
   return (
-    <BrowserRouter basename="/DnD-Dungeon-Master-AI">
+    <BrowserRouter basename={import.meta.env.VITE_BASE_URL || '/DnD-Dungeon-Master-AI/'}>
       <div className="flex flex-col min-h-screen bg-gray-900">
         <div className="flex-grow">
           <Routes>

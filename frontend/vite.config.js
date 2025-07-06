@@ -1,26 +1,21 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react";
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  base: '/DnD-Dungeon-Master-AI/',
-  server: {
-    host: '0.0.0.0',
-    watch: {
-      usePolling: true,
-    },
-  },
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash][extname]',
+export default defineConfig(({ command, mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  // Now you can access the environment variables via env.VARIABLE_NAME
+  const basename = env.VITE_BASE_URL || "/";
+
+  return {
+    plugins: [react()],
+    server: {
+      host: "0.0.0.0",
+      watch: {
+        usePolling: true, // Use polling for file changes
       },
     },
-  },
-});
+    base: basename,
+  };});
